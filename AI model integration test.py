@@ -9,7 +9,7 @@ model_name = "llama3"
 # Prompt to send
 prompt = "Why is the sky blue? Explain in one sentence."
 
-# Payload
+# Payload to send to model
 payload = {
     "model": model_name,
     "prompt": prompt,
