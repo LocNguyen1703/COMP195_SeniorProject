@@ -3,35 +3,35 @@ import 'package:test_flutter_app/testing_database/contact.dart';
 import 'package:test_flutter_app/testing_database/contact_repository.dart';
 import 'package:test_flutter_app/testing_database/contact_form_widget.dart';
 
-void main() {
-  runApp(const MyApp());
-}
+// void main() {
+//   runApp(const MyApp());
+// }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+// class MyApp extends StatelessWidget {
+//   const MyApp({super.key});
 
-  @override
-  //build method - main method that returns our main widget and that will be called anytime Flutter needs
-  // to REBUILD the UI (e.g. when data changes or after some user interaction)
-  Widget build(BuildContext context) { // main method that returns main widget of our app 
-    return MaterialApp(
-      title: 'MyApp',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue), // theme of the app (i.e. color scheme)
-      ),
-      home: const ContactPage(),
-        );
-  }
-}
+//   @override
+//   //build method - main method that returns our main widget and that will be called anytime Flutter needs
+//   // to REBUILD the UI (e.g. when data changes or after some user interaction)
+//   Widget build(BuildContext context) { // main method that returns main widget of our app 
+//     return MaterialApp(
+//       title: 'MyApp',
+//       theme: ThemeData(
+//         colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue), // theme of the app (i.e. color scheme)
+//       ),
+//       home: const ContactPage(),
+//         );
+//   }
+// }
 
 class ContactPage extends StatefulWidget {
   const ContactPage({super.key});
 
   @override
-  State<ContactPage> createState() => _ContactPageState();
+  State<ContactPage> createState() => ContactPageState();
 }
 
-class _ContactPageState extends State<ContactPage> {
+class ContactPageState extends State<ContactPage> {
   List<Contact> contacts = []; 
 
   Future<void> loadContacts() async {
@@ -41,7 +41,7 @@ class _ContactPageState extends State<ContactPage> {
     });
   }
 
-  void _showContactFormDialog(Contact? contact) async {
+  void showContactFormDialog(Contact? contact) async {
     final title = contact == null ? 'Add Contact' : 'Edit Contact';
     final result = await showDialog(
       context: context,
@@ -71,109 +71,56 @@ class _ContactPageState extends State<ContactPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Home Page'),
-        backgroundColor: Theme.of(context).colorScheme.primary,
-      ),
-
-      body: Container(
-        padding: const EdgeInsets.all(16.0),
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Colors.blue, Colors.lightBlueAccent],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+    return Stack(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(16.0),
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.blue, Colors.lightBlueAccent],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
           ),
-        ),
 
-        child: ListView.builder(
-          itemCount: contacts.length,
-          itemBuilder: (context, index) {
-            final contact = contacts[index];
-            return Card(
-              elevation: 4,
-              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              child: ListTile(
-                leading: CircleAvatar(
-                  backgroundColor: Theme.of(context).colorScheme.primary,
-                  child: Text(
-                    contact.name[0], 
-                    style: const TextStyle(color: Colors.white)
+          child: ListView.builder(
+            itemCount: contacts.length,
+            itemBuilder: (context, index) {
+              final contact = contacts[index];
+              return Card(
+                elevation: 4,
+                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                child: ListTile(
+                  leading: CircleAvatar(
+                    backgroundColor: Theme.of(context).colorScheme.primary,
+                    child: Text(
+                      contact.name[0], 
+                      style: const TextStyle(color: Colors.white)
+                    ),
+                  ),
+                  title: Text(
+                    contact.name,
+                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  subtitle: Text(contact.email),
+                  onTap: () {
+                    // Handle contact tap (e.g., navigate to contact details)
+                    showContactFormDialog(contact); // show the contact form dialog with the selected contact (for editing)
+                  },
+          
+                  trailing: IconButton(
+                    icon: const Icon(Icons.delete, color: Colors.red),
+                    onPressed: () {
+                      _deleteContact(contact.id!); // delete the contact (the "!" is used to assert that contact.id is not null)
+                    },
                   ),
                 ),
-                title: Text(
-                  contact.name,
-                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                subtitle: Text(contact.email),
-                onTap: () {
-                  // Handle contact tap (e.g., navigate to contact details)
-                  _showContactFormDialog(contact); // show the contact form dialog with the selected contact (for editing)
-                },
-        
-                trailing: IconButton(
-                  icon: const Icon(Icons.delete, color: Colors.red),
-                  onPressed: () {
-                    _deleteContact(contact.id!); // delete the contact (the "!" is used to assert that contact.id is not null)
-                  },
-                ),
-              ),
-            );
-          },
+              );
+            },
+          ),
         ),
-      ),
-
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          _showContactFormDialog(null); // show the contact form dialog with no contact (for adding a new contact)
-        },
-        child: const Icon(Icons.add),
-      ),
-      
-      bottomNavigationBar: BottomNavigationBar(
-        items: [
-          BottomNavigationBarItem(
-            icon: const Icon(Icons.home),
-            label: 'Home',
-          ),
-          BottomNavigationBarItem(
-            icon: const Icon(Icons.settings),
-            label: 'Settings',
-          ),
-          BottomNavigationBarItem(
-            icon: const Icon(Icons.person),
-            label: 'Profile', 
-          ),
-        ],
-      ),
-
-      drawer: Drawer(
-        child: ListView(
-          padding: EdgeInsets.zero,
-          children: [
-            DrawerHeader(
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.primary,
-              ),
-              child: Text('Drawer Header'),
-            ),
-            ListTile(
-              title: Text('Item 1'),
-              onTap: () {
-                // Handle item 1 tap
-              },
-            ),
-            ListTile(
-              title: Text('Item 2'),
-              onTap: () {
-                // Handle item 2 tap
-              },
-            ),
-          ],
-        ),
-      ),
+      ],
     );
   }
 }

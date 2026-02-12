@@ -1,44 +1,70 @@
 import 'package:flutter/material.dart';
 
-void main() {
-  runApp(const MyApp());
-}
-
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
-  @override
-  //build method - main method that returns our main widget and that will be called anytime Flutter needs
-  // to REBUILD the UI (e.g. when data changes or after some user interaction)
-  Widget build(BuildContext context) { // main method that returns main widget of our app 
-    return MaterialApp(
-      title: 'MyApp',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue), // theme of the app (i.e. color scheme)
-      ),
-      home: const HomePage(),
-        );
-  }
-}
-
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
+  // This widget is the home page of your application. It is stateful, meaning
+  // that it has a State object (defined below) that contains fields that affect
+  // how it looks.
+
+  // This class is the configuration for the state. It holds the values (in this
+  // case the title) provided by the parent (in this case the App widget) and
+  // used by the build method of the State. Fields in a Widget subclass are
+  // always marked "final".
+
   @override
-  State<HomePage> createState() => _HomePageState();
+  State<HomePage> createState() => HomePageState(); //the dash before the name (_HomePageState) indicates that this class is private - cannot be inherited
 }
 
-class _HomePageState extends State<HomePage> {
+class HomePageState extends State<HomePage> {
   int count = 0; 
+  int currentPage = 0;
 
+  void increment() {
+    setState(() {
+      count++;
+    });
+  }
+
+  void decrement() {
+    setState(() {
+      count--;
+    });
+  }
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Home Page'),
-        backgroundColor: Theme.of(context).colorScheme.primary,
-      ),
+    return Stack(
+      children: [
+        // Positioned(
+        //   bottom: 16,
+        //   right: 16,
+        //   child: Padding(
+        //     padding: const EdgeInsets.all(2.0),
+        //     child: Row(
+        //       mainAxisAlignment: MainAxisAlignment.end,
+        //       children: [
+        //         FloatingActionButton(
+        //           onPressed: () {
+        //             decrement();
+        //           },
+        //           child: const Icon(Icons.remove),
+        //         ),
+        //         SizedBox(width: 10), // adds some space between the two buttons
+        //         FloatingActionButton(
+        //           onPressed: () {
+        //             increment();
+        //           },
+        //           child: const Icon(Icons.add),
+        //         )
+        //       ],
+        //     ),
+        //   ),
+        // ),
 
+        Center(
+          child: Text('$count', style: const TextStyle(fontSize: 50)),
+        )
+      ],
       // body: ListView.builder( 
       //   scrollDirection: Axis.horizontal,
       //   addAutomaticKeepAlives: false,
@@ -51,79 +77,6 @@ class _HomePageState extends State<HomePage> {
       //   },
         
       // ),
-
-      body: Center(
-        child: Text('$count', style: const TextStyle(fontSize: 50)),
-      ),
-      
-      floatingActionButton: Padding(
-        padding: const EdgeInsets.all(2.0),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.end,
-          children: [
-            FloatingActionButton(
-              onPressed: () {
-                setState(() {
-                  count--;
-                });
-              },
-              child: const Icon(Icons.remove),
-            ),
-            SizedBox(width: 10), // adds some space between the two buttons
-            FloatingActionButton(
-              onPressed: () {
-                setState(() {
-                  count++;
-                });
-              },
-              child: const Icon(Icons.add),
-            )
-          ],
-        ),
-      ),
-
-      bottomNavigationBar: BottomNavigationBar(
-        items: [
-          BottomNavigationBarItem(
-            icon: const Icon(Icons.home),
-            label: 'Home',
-          ),
-          BottomNavigationBarItem(
-            icon: const Icon(Icons.settings),
-            label: 'Settings',
-          ),
-          BottomNavigationBarItem(
-            icon: const Icon(Icons.person),
-            label: 'Profile', 
-          ),
-        ],
-      ),
-
-      drawer: Drawer(
-        child: ListView(
-          padding: EdgeInsets.zero,
-          children: [
-            DrawerHeader(
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.primary,
-              ),
-              child: Text('Drawer Header'),
-            ),
-            ListTile(
-              title: Text('Item 1'),
-              onTap: () {
-                // Handle item 1 tap
-              },
-            ),
-            ListTile(
-              title: Text('Item 2'),
-              onTap: () {
-                // Handle item 2 tap
-              },
-            ),
-          ],
-        ),
-      ),
     );
   }
 }
