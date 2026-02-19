@@ -1,7 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:test_flutter_app/ai_chat_handler/ai_chat_page.dart';
 import 'package:test_flutter_app/new_app.dart';
 import 'package:test_flutter_app/new_page.dart';
 import 'package:test_flutter_app/testing_database/contact_page.dart';
+
+/*handy VSCode shortcuts for refactoring: 
+Alt + Click: Place cursors at arbitrary, non-consecutive locations in the file.
+Ctrl + Alt + Down / Up: Insert a cursor directly below or above the current line, useful for consecutive lines.
+Ctrl + D: Select the word under the cursor, or add a cursor to the next occurrence of the current selection (one by one).
+Ctrl + Shift + L: Select all occurrences of the currently highlighted text in the document and add a cursor to each, which is great for mass changes.
+Shift + Alt + Down / Up: Copies the current line down or up and places a cursor on the new line.
+Shift + Alt + I: After making a multi-line selection (e.g., using Shift and arrow keys), this shortcut places a cursor at the end of each selected
+*/
 
 void main() {
   runApp(const MyApp());
@@ -15,23 +25,8 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Flutter Demo',
-      theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: .fromSeed(seedColor: Colors.yellowAccent),
+      theme: ThemeData( 
+        colorScheme: .fromSeed(seedColor: Colors.yellowAccent), // This is the color theme of your application.
       ),
       home: const MainPage(),
     );
@@ -49,12 +44,9 @@ class _MainPageState extends State<MainPage> {
   int currentPage = 0; 
   final GlobalKey<HomePageState> homeKey = GlobalKey<HomePageState>();
   final GlobalKey<ContactPageState> contactKey = GlobalKey<ContactPageState>();
+  final GlobalKey<AIChatPageState> aiChatKey = GlobalKey<AIChatPageState>();
   
-  List<Widget> pages = [
-    // const HomePage(),
-    // const ContactPage(),
-    // const NewPage(), 
-  ];
+  List<Widget> pages = [];
   
   Widget? _buildFAB() {
     switch (currentPage) {
@@ -91,6 +83,59 @@ class _MainPageState extends State<MainPage> {
     }
   }
 
+  Widget? _buildDrawer() {
+    switch(currentPage) {
+      case != 2: 
+        return Drawer(
+          child: ListView(
+            padding: EdgeInsets.zero,
+            children: [
+              DrawerHeader(
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                child: Text('Drawer Header'),
+              ),
+              ListTile(
+                title: Text('Item 1'),
+                onTap: () {
+                  // Handle item 1 tap
+                },
+              ),
+              ListTile(
+                title: Text('Item 2'),
+                onTap: () {
+                  // Handle item 2 tap
+                },
+              ),
+            ],
+          ),
+        );
+
+      case 2: 
+        return Drawer(
+          child: ListView.builder(
+            padding: EdgeInsets.zero,
+            itemCount: aiChatKey.currentState?.conversations.length ?? 0,
+            itemBuilder: (context, index) {
+              final title = aiChatKey.currentState?.conversations[index].title ?? 'Conversation $index';
+              return ListTile(
+                title: Text(title),
+                onTap: () {
+                  // Handle conversation tap (e.g., load the conversation in the main area)
+                },
+              );
+            },
+          ),
+          // child: FutureBuilder<List<Conversation>>(
+            // future: aiChatKey.currentState?.loadConversations()
+        );
+
+      default:
+        return null;
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -98,18 +143,17 @@ class _MainPageState extends State<MainPage> {
     pages = [
       HomePage(key: homeKey),
       ContactPage(key: contactKey),
-      const NewPage(),
+      // const NewPage(),
+      AIChatPage(key: aiChatKey),
 
     ];
   }
 
   @override
   Widget build(BuildContext context) {
-    
-    
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Home Page'),
+        title: const Text('My App'),
         backgroundColor: Theme.of(context).colorScheme.primary,
       ),
       body: IndexedStack(
@@ -141,31 +185,33 @@ class _MainPageState extends State<MainPage> {
 
       floatingActionButton: _buildFAB(),
 
-      drawer: Drawer(
-        child: ListView(
-          padding: EdgeInsets.zero,
-          children: [
-            DrawerHeader(
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.primary,
-              ),
-              child: Text('Drawer Header'),
-            ),
-            ListTile(
-              title: Text('Item 1'),
-              onTap: () {
-                // Handle item 1 tap
-              },
-            ),
-            ListTile(
-              title: Text('Item 2'),
-              onTap: () {
-                // Handle item 2 tap
-              },
-            ),
-          ],
-        ),
-      ),
+      // drawer: Drawer(
+      //   child: ListView(
+      //     padding: EdgeInsets.zero,
+      //     children: [
+      //       DrawerHeader(
+      //         decoration: BoxDecoration(
+      //           color: Theme.of(context).colorScheme.primary,
+      //         ),
+      //         child: Text('Drawer Header'),
+      //       ),
+      //       ListTile(
+      //         title: Text('Item 1'),
+      //         onTap: () {
+      //           // Handle item 1 tap
+      //         },
+      //       ),
+      //       ListTile(
+      //         title: Text('Item 2'),
+      //         onTap: () {
+      //           // Handle item 2 tap
+      //         },
+      //       ),
+      //     ],
+      //   ),
+      // ),
+
+      drawer: _buildDrawer(),
     );
   }
 }
