@@ -16,7 +16,23 @@ class MessageDatabase {
       version: 1,
       onCreate: (Database db, int version) async {
         await db.execute('''
-          CREATE TABLE IF NOT EXISTS messages (
+          DROP TABLE IF EXISTS conversations; 
+        ''');
+        
+        await db.execute('''
+          DROP TABLE IF EXISTS messages;
+        ''');
+
+        await db.execute('''
+          CREATE TABLE conversations (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT NOT NULL,
+            timestamp TEXT NOT NULL
+          );
+        ''');
+
+        await db.execute('''
+          CREATE TABLE messages (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             conversationId INTEGER,
             text TEXT NOT NULL,
@@ -24,13 +40,6 @@ class MessageDatabase {
             timestamp TEXT NOT NULL,
             isUser INTEGER NOT NULL,
               FOREIGN KEY (conversationId) REFERENCES conversations(id)
-          );
-        ''');
-        await db.execute('''
-          CREATE TABLE IF NOT EXISTS conversations (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            title TEXT NOT NULL,
-            timestamp TEXT NOT NULL
           );
         ''');
       },
@@ -41,13 +50,14 @@ class MessageDatabase {
 
   static Future<List<Message>> getAllMessages() async {
     final db = await _getDatabase(); 
-    final result = await db.query(
-      'messages',
-      ); 
+    final result = await db.query('messages'); 
     return result.map((json) => Message.fromMap(json)).toList();
   } 
 
   static Future<List<Message>> getMessage(int conversationId) async {
+    if (conversationId == -1) {
+      return []; // return an empty list if no conversation is selected
+    }
     final db = await _getDatabase(); 
     final result = await db.query(
       'messages',

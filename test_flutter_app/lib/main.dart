@@ -46,6 +46,8 @@ class _MainPageState extends State<MainPage> {
   final GlobalKey<ContactPageState> contactKey = GlobalKey<ContactPageState>();
   final GlobalKey<AIChatPageState> aiChatKey = GlobalKey<AIChatPageState>();
   
+  final ScrollController scrollController = ScrollController();
+  
   List<Widget> pages = [];
   
   Widget? _buildFAB() {
@@ -112,10 +114,11 @@ class _MainPageState extends State<MainPage> {
           ),
         );
 
-      case 2: 
+      case 2:
         return Drawer(
           child: ListView.builder(
-            padding: EdgeInsets.zero,
+            controller: scrollController,
+            padding: EdgeInsets.fromLTRB(0, 20, 0, 0),
             itemCount: aiChatKey.currentState?.conversations.length ?? 0,
             itemBuilder: (context, index) {
               final title = aiChatKey.currentState?.conversations[index].title ?? 'Conversation $index';
@@ -123,7 +126,18 @@ class _MainPageState extends State<MainPage> {
                 title: Text(title),
                 onTap: () {
                   // Handle conversation tap (e.g., load the conversation in the main area)
+                  setState(() {
+                    aiChatKey.currentState?.currentConversationId = aiChatKey.currentState?.conversations[index].id;
+                    aiChatKey.currentState?.loadMessages(aiChatKey.currentState?.currentConversationId ?? -1); // load messages for the selected conversation (using -1 as a placeholder for no conversation)
+                  });
                 },
+                trailing: IconButton(
+                  icon: Icon(Icons.delete, color: Colors.red),
+                  onPressed: () {
+                    // Handle conversation deletion
+                    aiChatKey.currentState?.deleteConversation(aiChatKey.currentState?.conversations[index].id??-1);
+                  },
+                ),
               );
             },
           ),

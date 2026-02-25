@@ -23,9 +23,9 @@ class Message {
       'id': id,
       'text': text,
       'title': title,
-      'timestamp': timestamp,
+      'timestamp': timestamp.toIso8601String(),
       'isUser': isUser ? 1 : 0, // store as 1 for true and 0 for false in the database  
-      'conversation_id': conversationId,
+      'conversationId': conversationId,
     };
   }
 
@@ -35,9 +35,9 @@ class Message {
       id: map['id'],
       text: map['text'],
       title: map['title'],
-      timestamp: DateTime.parse(map['created_at']),
+      timestamp: DateTime.parse(map['timestamp']),
       isUser: map['isUser'] == 1, // convert back to bool (true if 1, false if 0)
-      conversationId: map['conversation_id'],
+      conversationId: map['conversationId'],
     );
   }
 

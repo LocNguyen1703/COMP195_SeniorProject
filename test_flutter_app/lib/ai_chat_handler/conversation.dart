@@ -16,7 +16,7 @@ class Conversation {
     return {
       'id': id,
       'title': title,
-      'timestamp': timestamp,
+      'timestamp': timestamp.toIso8601String(),
     };
   }
 
@@ -25,10 +25,7 @@ class Conversation {
     return Conversation(
       id: map['id'],
       title: map['title'],
-      timestamp: DateTime.parse(map['created_at']),
+      timestamp: DateTime.parse(map['timestamp']),
     );
-  }
-
-  
-
+  } 
 }
