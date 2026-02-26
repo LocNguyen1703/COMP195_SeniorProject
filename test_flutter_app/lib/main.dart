@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:test_flutter_app/ai_chat_handler/ai_chat_page.dart';
+import 'package:test_flutter_app/ai_chat_handler/conversation.dart';
 import 'package:test_flutter_app/new_app.dart';
 import 'package:test_flutter_app/new_page.dart';
 import 'package:test_flutter_app/testing_database/contact_page.dart';
+import 'package:test_flutter_app/ai_chat_handler/message_database.dart';  
 
 /*handy VSCode shortcuts for refactoring: 
 Alt + Click: Place cursors at arbitrary, non-consecutive locations in the file.
@@ -42,13 +44,37 @@ class MainPage extends StatefulWidget {
 
 class _MainPageState extends State<MainPage> {
   int currentPage = 0; 
+  int? currentConversationId; 
+  List<Conversation> conversations = []; 
   final GlobalKey<HomePageState> homeKey = GlobalKey<HomePageState>();
   final GlobalKey<ContactPageState> contactKey = GlobalKey<ContactPageState>();
-  final GlobalKey<AIChatPageState> aiChatKey = GlobalKey<AIChatPageState>();
+  // final GlobalKey<AIChatPageState> aiChatKey = GlobalKey<AIChatPageState>();
   
   final ScrollController scrollController = ScrollController();
   
   List<Widget> pages = [];
+
+  Future<void> loadConversations() async {
+    final conversations = await MessageDatabase.getConversations();
+    setState(() {
+      this.conversations = conversations;
+      
+    }); 
+  }
+
+  Future<void> deleteConversation(int conversationId) async {
+    if (conversationId == -1) {
+      return; // do nothing if no conversation is selected
+    }
+    await MessageDatabase.deleteConversation(conversationId);
+    await loadConversations(); // reload conversations to update the sidebar after deletion
+    if (currentConversationId == conversationId) {
+      setState(() {
+        currentConversationId = null; // clear the current conversation if it was deleted
+        // messages = []; // clear messages if the current conversation was deleted
+      });
+    }
+  }
   
   Widget? _buildFAB() {
     switch (currentPage) {
@@ -119,23 +145,34 @@ class _MainPageState extends State<MainPage> {
           child: ListView.builder(
             controller: scrollController,
             padding: EdgeInsets.fromLTRB(0, 20, 0, 0),
-            itemCount: aiChatKey.currentState?.conversations.length ?? 0,
+            // itemCount: aiChatKey.currentState?.conversations.length ?? 0,
+            itemCount: conversations.length,
             itemBuilder: (context, index) {
-              final title = aiChatKey.currentState?.conversations[index].title ?? 'Conversation $index';
+              // final title = aiChatKey.currentState?.conversations[index].title ?? 'Conversation $index';
+              final title = conversations[index].title; 
               return ListTile(
                 title: Text(title),
                 onTap: () {
                   // Handle conversation tap (e.g., load the conversation in the main area)
                   setState(() {
-                    aiChatKey.currentState?.currentConversationId = aiChatKey.currentState?.conversations[index].id;
-                    aiChatKey.currentState?.loadMessages(aiChatKey.currentState?.currentConversationId ?? -1); // load messages for the selected conversation (using -1 as a placeholder for no conversation)
+                    // aiChatKey.currentState?.currentConversationId = aiChatKey.currentState?.conversations[index].id;
+                    currentConversationId = conversations[index].id;
+                    // aiChatKey.currentState?.loadMessages(aiChatKey.currentState?.currentConversationId ?? -1); // load messages for the selected conversation (using -1 as a placeholder for no conversation)
                   });
                 },
                 trailing: IconButton(
                   icon: Icon(Icons.delete, color: Colors.red),
-                  onPressed: () {
+                  onPressed: () async {
                     // Handle conversation deletion
-                    aiChatKey.currentState?.deleteConversation(aiChatKey.currentState?.conversations[index].id??-1);
+                    // await deleteConversation(aiChatKey.currentState?.conversations[index].id??-1);
+                    await deleteConversation(conversations[index].id??-1); // delete the conversation from the database
+                    await loadConversations(); // reload conversations to update the sidebar after deletion
+
+                    // setState(() {}); // forces the widget to rebuild and reflect the updated conversations list after deletion 
+                    // setState(() {
+                    //   // aiChatKey.currentState?.conversations.removeWhere((c) => c.id == aiChatKey.currentState?.conversations[index].id);
+                    //   aiChatKey.currentState?.loadConversations(); // reload conversations to update the sidebar after deletion
+                    // });
                   },
                 ),
               );
@@ -153,14 +190,18 @@ class _MainPageState extends State<MainPage> {
   @override
   void initState() {
     super.initState();
+    loadConversations();
 
-    pages = [
-      HomePage(key: homeKey),
-      ContactPage(key: contactKey),
-      // const NewPage(),
-      AIChatPage(key: aiChatKey),
-
-    ];
+    // pages = [
+    //   HomePage(key: homeKey),
+    //   ContactPage(key: contactKey),
+    //   // const NewPage(),
+    //   AIChatPage(
+    //     conversationId: currentConversationId,
+    //     onConversationCreated: loadConversations,
+    //     onConversationDeleted: deleteConversation,
+    //     ),
+    // ];
   }
 
   @override
@@ -172,7 +213,21 @@ class _MainPageState extends State<MainPage> {
       ),
       body: IndexedStack(
         index: currentPage,
-        children: pages,
+        children: [
+          HomePage(key: homeKey),
+          ContactPage(key: contactKey),
+          // const NewPage(),
+          AIChatPage(
+            conversationId: currentConversationId,
+            onConversationCreated: (int newId) async {
+              await loadConversations();
+              setState(() {
+                currentConversationId = newId;
+              });
+            },
+            onConversationDeleted: deleteConversation,
+            ),
+        ],
       ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: currentPage,
@@ -198,33 +253,6 @@ class _MainPageState extends State<MainPage> {
       ),
 
       floatingActionButton: _buildFAB(),
-
-      // drawer: Drawer(
-      //   child: ListView(
-      //     padding: EdgeInsets.zero,
-      //     children: [
-      //       DrawerHeader(
-      //         decoration: BoxDecoration(
-      //           color: Theme.of(context).colorScheme.primary,
-      //         ),
-      //         child: Text('Drawer Header'),
-      //       ),
-      //       ListTile(
-      //         title: Text('Item 1'),
-      //         onTap: () {
-      //           // Handle item 1 tap
-      //         },
-      //       ),
-      //       ListTile(
-      //         title: Text('Item 2'),
-      //         onTap: () {
-      //           // Handle item 2 tap
-      //         },
-      //       ),
-      //     ],
-      //   ),
-      // ),
-
       drawer: _buildDrawer(),
     );
   }

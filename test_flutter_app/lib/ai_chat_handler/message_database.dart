@@ -36,7 +36,6 @@ class MessageDatabase {
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             conversationId INTEGER,
             text TEXT NOT NULL,
-            title TEXT NOT NULL,
             timestamp TEXT NOT NULL,
             isUser INTEGER NOT NULL,
               FOREIGN KEY (conversationId) REFERENCES conversations(id)
@@ -70,6 +69,12 @@ class MessageDatabase {
   static Future<List<Conversation>> getConversations() async {
     final db = await _getDatabase(); 
     final result = await db.query('conversations'); 
+    return result.map((json) => Conversation.fromMap(json)).toList();
+  }
+
+    static Future<List<Conversation>> getConversation(int convesationId) async {
+    final db = await _getDatabase(); 
+    final result = await db.query('conversations', where: 'id = ?', whereArgs: [convesationId]); 
     return result.map((json) => Conversation.fromMap(json)).toList();
   }
 

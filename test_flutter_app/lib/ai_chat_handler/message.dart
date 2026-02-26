@@ -2,7 +2,6 @@ class Message {
   //define attributes of the Message class
   int? id; // id is not required (marked by the "?") - it's nullable because it will be auto-incremented by the database
   String text;
-  String title; // all these attributes are required (no "?") - cannot be null
   DateTime timestamp; 
   bool isUser; // to differentiate between user messages and AI messages (true for user messages, false for AI messages)
   int conversationId;
@@ -10,7 +9,6 @@ class Message {
   //constructor for the Message class 
   Message({
     this.id,
-    required this.title,
     required this.text,
     required this.timestamp,
     required this.isUser,
@@ -22,7 +20,6 @@ class Message {
     return {
       'id': id,
       'text': text,
-      'title': title,
       'timestamp': timestamp.toIso8601String(),
       'isUser': isUser ? 1 : 0, // store as 1 for true and 0 for false in the database  
       'conversationId': conversationId,
@@ -34,7 +31,6 @@ class Message {
     return Message(
       id: map['id'],
       text: map['text'],
-      title: map['title'],
       timestamp: DateTime.parse(map['timestamp']),
       isUser: map['isUser'] == 1, // convert back to bool (true if 1, false if 0)
       conversationId: map['conversationId'],
