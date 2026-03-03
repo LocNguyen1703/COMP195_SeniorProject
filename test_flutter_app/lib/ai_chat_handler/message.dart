@@ -37,6 +37,21 @@ class Message {
     );
   }
 
+  Message copyWith({
+    int? id, 
+    int? conversationId,
+    String? text,
+    DateTime? timestamp,
+    bool? isUser,
+  }) {
+    return Message(
+      id: id ?? this.id,
+      conversationId: conversationId ?? this.conversationId,
+      text: text ?? this.text,
+      timestamp: timestamp ?? this.timestamp, 
+      isUser: isUser ?? this.isUser,
+    );
+  }
   
 
 }

@@ -1,5 +1,6 @@
 import 'dart:ffi';
 
+import 'package:flutter/cupertino.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
@@ -8,7 +9,11 @@ class AIqueryHandler {
 
   AIqueryHandler();
 
-  Future<String> getAIResponse(List<Map<String, String>> messageHistory, int conversationId) async {
+  Future<void> streamAIResponse({
+    required List<Map<String, String>> messageHistory,
+    required void Function(String token) onToken, 
+    required void Function() onDone
+  }) async {
     // Simulate a delay for fetching the AI query
 
     /* 
@@ -33,31 +38,64 @@ class AIqueryHandler {
     // }
 
 
-    final Map<String, Object>data = <String, Object>{
-      'model': 'llama3', // specify the model you want to use
-      'messages': messageHistory, // this should be a list of messages, including the message history and the new query
-      'stream': false, // set to true to receive the response in a streaming manner
-    };
+    // final Map<String, Object>data = <String, Object>{
+    //   'model': 'llama3', // specify the model you want to use
+    //   'messages': messageHistory, // this should be a list of messages, including the message history and the new query
+    //   'stream': true, // set to true to receive the response in a streaming manner
+    // };
 
     try {
-      final response = await http.post(
-        Uri.parse('http://10.0.2.2:11434/api/chat'), // replace with your Ollama API endpoint
-        headers: <String, String>{
-          'Content-Type': 'application/json', // set the content type to JSON
-        },
-        body: jsonEncode(data), // encode the data as JSON
-      ); // make the HTTP POST request to the Ollama API with the constructed data
+      final request = http.Request(
+        'POST',
+        Uri.parse('http://10.0.2.2:11434/api/chat'));
 
-      if (response.statusCode == 200) {
-        final responseData = json.decode(response.body); // decode the response body from JSON
-        print(responseData); // print the decoded response data for debugging purposes
-        return responseData['message']['content']; // extract and return the AI's response from the decoded data
+        request.headers['Content-Type'] = 'application/json'; // set the content type to JSON
 
-      }
+        request.body = jsonEncode({
+          'model': 'llama3', // specify the model you want to use
+          'messages': messageHistory, // this should be a list of messages, including the message history and the new query
+          'stream': true, // set to true to receive the response in a streaming manner
+        }); // encode the data as JSON
+
+      final streamedResponse = await request.send(); // send the HTTP POST request to the Ollama API and get the streamed response
+
+      streamedResponse.stream
+        .transform(utf8.decoder) // decode the streamed response from UTF-8
+        .transform(const LineSplitter()) // split the response into lines
+        .listen((line){
+          if (line.isEmpty) return; // skip empty lines
+
+          final decoded = jsonDecode(line);
+
+          if (decoded['done'] == true) {
+            onDone(); 
+            return;
+          }
+
+          final content = decoded['message']?['content']; // extract the content of the message from the decoded response
+          if (content != null) {
+            onToken(content); // call the onToken callback with the content of the message
+          }
+        });
+
+  //     final response = http.post(
+  //       Uri.parse('http://10.0.2.2:11434/api/chat'), // replace with your Ollama API endpoint
+  //       headers: <String, String>{
+  //         'Content-Type': 'application/json', // set the content type to JSON
+  //       },
+  //       body: jsonEncode(data), // encode the data as JSON
+  //     ); // make the HTTP POST request to the Ollama API with the constructed data
+
+  //     if (response.statusCode == 200) {
+  //       final responseData = json.decode(response.body); // decode the response body from JSON
+  //       print(responseData); // print the decoded response data for debugging purposes
+  //       return responseData['message']['content']; // extract and return the AI's response from the decoded data
+
+  //     }
     } catch (e) {
       // implement correct error-handling logic for HTTP requests here
-      print('Error fetching AI query: $e'); // print any errors that occur during the HTTP request
+      debugPrint('Error fetching AI query: $e'); // print any errors that occur during the HTTP request
     }
-    return 'Error fetching AI query'; // return an error message if the request fails
+  //   return 'Error fetching AI query'; // return an error message if the request fails
   }
 }

@@ -89,13 +89,13 @@ class MessageDatabase {
   }
 
   //not sure if we need this function - not sure if we need to update past messages in chat history
-  static Future<int> updateMessage(Message message) async {
+  static Future<void> updateMessage(int id, String newText) async {
     final db = await _getDatabase();
-    return await db.update(
+    await db.update(
       'messages',
-      message.toMap(),
+      {'text': newText},
       where: 'id = ?',
-      whereArgs: [message.id],
+      whereArgs: [id],
     );
   }
 

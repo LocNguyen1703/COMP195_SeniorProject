@@ -1,3 +1,4 @@
+import 'package:dash_chat_2/dash_chat_2.dart';
 import 'package:flutter/material.dart';
 import 'package:test_flutter_app/ai_chat_handler/conversation.dart';
 import 'package:test_flutter_app/ai_chat_handler/message.dart';
@@ -67,7 +68,7 @@ class AIChatPageState extends State<AIChatPage> {
     // await loadMessages(currentConversationId ?? -1); // reload messages to include the new message - using -1 as a placeholder for no conversation
   }
 
-    Future<Map<String, String>> constructMessage(List<Map<String, String>> messageHistModified, List<Message> messageHistory) async {
+    Future<Map<String, String>> mapMessage(List<Map<String, String>> messageHistModified, List<Message> messageHistory) async {
     Message lastMessage = messageHistory.last; // get the last message from the message history
     Map<String, String> modifiedMessage = <String, String>{
       'role': lastMessage.isUser ? 'user' : 'system', // determine the role based on the isUser attribute of the Message object
@@ -150,6 +151,8 @@ class AIChatPageState extends State<AIChatPage> {
                   int? conversationId = widget.conversationId;
                   if (textController.text.trim().isEmpty) return; 
                   if (widget.conversationId == null) {
+                    messageHistModified.clear(); // clear the modified message history when starting a new conversation
+                    messages.clear(); // clear the messages list when starting a new conversation
                     conversationId = await createNewConversation('New Conversation'); // creates a conversation and updates currentConversationId to the new conversation's id
                     await widget.onConversationCreated?.call(conversationId);
                   } 
@@ -158,11 +161,42 @@ class AIChatPageState extends State<AIChatPage> {
                   // await loadConversations(); // reload conversations to update the timestamp of the current conversation - for displaying in the sidebar
                   textController.clear(); // clear the TextField after sending the message
                   
-                  Map<String, String> modifiedMessage = await constructMessage(messageHistModified, messages);
+                  // convert the latest user messasge into proper AI query format & add it to the message history for the Ollama API
+                  Map<String, String> modifiedMessage = await mapMessage(messageHistModified, messages);
                   messageHistModified.add(modifiedMessage); // add the modified message to the message history in the format expected by the Ollama API
-                  String aiResponse = await aiQueryHandler.getAIResponse(messageHistModified, conversationId);
-                  await createMessage(aiResponse, conversationId, false); // create a new message in the database for the AI's response
+                  
+                  // get AI response using the modified message history and create a new message in the database for the AI's response, then reload messages to display the AI's response
+                  // String aiResponse = await aiQueryHandler.getAIResponse(messageHistModified, conversationId);
+                  String fullResponse = "";
+                  await createMessage(fullResponse, conversationId, false); // add a new message to the messages list for the AI's response - this will be updated as the response is streamed in
+                  await loadMessages(conversationId); 
+
+                  await aiQueryHandler.streamAIResponse(
+                    messageHistory: messageHistModified, 
+                    onToken: (token) async {
+                      fullResponse += token; 
+
+                      setState(() {
+                        messages[messages.length-1] = messages[messages.length-1].copyWith(
+                          text: fullResponse,
+                          conversationId: conversationId, 
+                          isUser: false, 
+                          timestamp: DateTime.now()); // update the last message in the messages list with the new token as it arrives, and set isUser to false to indicate that it's an AI response
+                      }); // update the UI to display the new token as it arrives  
+                    }, 
+                    onDone: () async {
+                      await MessageDatabase.updateMessage(
+                        messages[messages.length-1].id!, // update the last message in the database with the full AI response once the streaming is done
+                        fullResponse,
+                      );
+                    });
+
+                  // await createMessage(aiResponse, conversationId, false); // create a new message in the database for the AI's response
                   await loadMessages(conversationId); // reload messages to include the AI's response
+                  
+                  // add AI response to the message history for the Ollama API
+                  Map<String, String> modifiedResponse = await mapMessage(messageHistModified, messages);
+                  messageHistModified.add(modifiedResponse); // add the AI's response to the message history in the format expected by the Ollama API
 
                   // setState(() {
                   // });
