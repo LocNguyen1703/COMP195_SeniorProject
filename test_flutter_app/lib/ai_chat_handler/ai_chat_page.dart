@@ -21,10 +21,12 @@ class AIChatPage extends StatefulWidget {
 class AIChatPageState extends State<AIChatPage> {
   List<Message> messages = []; // this will hold the chat messages
   // int? currentConversationId; // to keep track of the current conversation
+  List<Map<String, String>> messageHistModified = []; // this will hold the modified message history in the format expected by the Ollama API (a list of maps with "role" and "content" keys)
 
   final TextEditingController textController = TextEditingController(); // controller for the TextField
   final ScrollController scrollController = ScrollController(); // for scrolling the ListView to the bottom when a new message is added
   
+  final AIqueryHandler aiQueryHandler = AIqueryHandler(); // instance of the AI query handler
 
   Future<void> loadMessages(int? currentConversationId) async {
     if (currentConversationId == -1 || currentConversationId == null) {
@@ -63,6 +65,16 @@ class AIChatPageState extends State<AIChatPage> {
       )
     );
     // await loadMessages(currentConversationId ?? -1); // reload messages to include the new message - using -1 as a placeholder for no conversation
+  }
+
+    Future<Map<String, String>> constructMessage(List<Map<String, String>> messageHistModified, List<Message> messageHistory) async {
+    Message lastMessage = messageHistory.last; // get the last message from the message history
+    Map<String, String> modifiedMessage = <String, String>{
+      'role': lastMessage.isUser ? 'user' : 'system', // determine the role based on the isUser attribute of the Message object
+      'content': lastMessage.text, // use the text attribute of the Message object as the content of the message
+    };
+    
+    return modifiedMessage;
   }
 
   @override
@@ -145,6 +157,13 @@ class AIChatPageState extends State<AIChatPage> {
                   await loadMessages(conversationId); // reload messages from the database to include the new message - for displaying as well 
                   // await loadConversations(); // reload conversations to update the timestamp of the current conversation - for displaying in the sidebar
                   textController.clear(); // clear the TextField after sending the message
+                  
+                  Map<String, String> modifiedMessage = await constructMessage(messageHistModified, messages);
+                  messageHistModified.add(modifiedMessage); // add the modified message to the message history in the format expected by the Ollama API
+                  String aiResponse = await aiQueryHandler.getAIResponse(messageHistModified, conversationId);
+                  await createMessage(aiResponse, conversationId, false); // create a new message in the database for the AI's response
+                  await loadMessages(conversationId); // reload messages to include the AI's response
+
                   // setState(() {
                   // });
 
