@@ -135,6 +135,10 @@ class AIChatPageState extends State<AIChatPage> {
           padding: const EdgeInsets.all(8.0),
           child: Row(
             children: [
+              IconButton(
+                onPressed: (){},
+                icon: const Icon(Icons.add_circle),
+              ),
               Expanded(
                 child: TextField(
                   controller: textController, // connect the TextField to the controller

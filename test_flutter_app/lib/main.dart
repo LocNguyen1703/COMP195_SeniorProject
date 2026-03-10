@@ -55,10 +55,12 @@ class _MainPageState extends State<MainPage> {
   List<Widget> pages = [];
 
   Future<void> loadConversations() async {
+    // if the widget is no longer mounted to the UI tree (i.e. no longer alive because it's destroyed) - exit function immediately
+    if (!mounted) return; 
+
     final conversations = await MessageDatabase.getConversations();
     setState(() {
       this.conversations = conversations;
-      
     }); 
   }
 
@@ -142,41 +144,68 @@ class _MainPageState extends State<MainPage> {
 
       case 2:
         return Drawer(
-          child: ListView.builder(
-            controller: scrollController,
-            padding: EdgeInsets.fromLTRB(0, 20, 0, 0),
-            // itemCount: aiChatKey.currentState?.conversations.length ?? 0,
-            itemCount: conversations.length,
-            itemBuilder: (context, index) {
-              // final title = aiChatKey.currentState?.conversations[index].title ?? 'Conversation $index';
-              final title = conversations[index].title; 
-              return ListTile(
-                title: Text(title),
-                onTap: () {
-                  // Handle conversation tap (e.g., load the conversation in the main area)
-                  setState(() {
-                    // aiChatKey.currentState?.currentConversationId = aiChatKey.currentState?.conversations[index].id;
-                    currentConversationId = conversations[index].id;
-                    // aiChatKey.currentState?.loadMessages(aiChatKey.currentState?.currentConversationId ?? -1); // load messages for the selected conversation (using -1 as a placeholder for no conversation)
-                  });
-                },
-                trailing: IconButton(
-                  icon: Icon(Icons.delete, color: Colors.red),
-                  onPressed: () async {
-                    // Handle conversation deletion
-                    // await deleteConversation(aiChatKey.currentState?.conversations[index].id??-1);
-                    await deleteConversation(conversations[index].id??-1); // delete the conversation from the database
-                    await loadConversations(); // reload conversations to update the sidebar after deletion
+          child: Column(
+            children: [
+              DrawerHeader(
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.primary,
 
-                    // setState(() {}); // forces the widget to rebuild and reflect the updated conversations list after deletion 
-                    // setState(() {
-                    //   // aiChatKey.currentState?.conversations.removeWhere((c) => c.id == aiChatKey.currentState?.conversations[index].id);
-                    //   aiChatKey.currentState?.loadConversations(); // reload conversations to update the sidebar after deletion
-                    // });
+                ),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: Text('Drawer Header'),
+                ), 
+              ),
+              Expanded(
+                child: ListView.builder(
+                  controller: scrollController,
+                  padding: EdgeInsets.zero,
+                  // itemCount: aiChatKey.currentState?.conversations.length ?? 0,
+                  itemCount: conversations.length + 1,
+                  itemBuilder: (context, index) {
+                    // final title = aiChatKey.currentState?.conversations[index].title ?? 'Conversation $index';
+                    if (index == 0) {
+                      return ListTile(
+                        title: const Text('New Conversation'),
+                        leading: const Icon(Icons.add),
+                        onTap: () {
+                          // Handle new conversation creation
+                          setState(() {
+                            currentConversationId = null; // clear the current conversation when creating a new one
+                          });
+                        },
+                      );
+                    }
+                    final title = conversations[index-1].title; 
+                    return ListTile(
+                      title: Text(title),
+                      onTap: () {
+                        // Handle conversation tap (e.g., load the conversation in the main area)
+                        setState(() {
+                          // aiChatKey.currentState?.currentConversationId = aiChatKey.currentState?.conversations[index].id;
+                          currentConversationId = conversations[index-1].id;
+                          // aiChatKey.currentState?.loadMessages(aiChatKey.currentState?.currentConversationId ?? -1); // load messages for the selected conversation (using -1 as a placeholder for no conversation)
+                        });
+                      },
+                      trailing: IconButton(
+                        icon: Icon(Icons.delete, color: Colors.red),
+                        onPressed: () async {
+                          // Handle conversation deletion
+                          // await deleteConversation(aiChatKey.currentState?.conversations[index].id??-1);
+                          await deleteConversation(conversations[index-1].id??-1); // delete the conversation from the database
+                
+                          // setState(() {}); // forces the widget to rebuild and reflect the updated conversations list after deletion 
+                          // setState(() {
+                          //   // aiChatKey.currentState?.conversations.removeWhere((c) => c.id == aiChatKey.currentState?.conversations[index].id);
+                          //   aiChatKey.currentState?.loadConversations(); // reload conversations to update the sidebar after deletion
+                          // });
+                        },
+                      ),
+                    );
                   },
                 ),
-              );
-            },
+              ),
+            ], 
           ),
           // child: FutureBuilder<List<Conversation>>(
             // future: aiChatKey.currentState?.loadConversations()
@@ -191,17 +220,12 @@ class _MainPageState extends State<MainPage> {
   void initState() {
     super.initState();
     loadConversations();
+  }
 
-    // pages = [
-    //   HomePage(key: homeKey),
-    //   ContactPage(key: contactKey),
-    //   // const NewPage(),
-    //   AIChatPage(
-    //     conversationId: currentConversationId,
-    //     onConversationCreated: loadConversations,
-    //     onConversationDeleted: deleteConversation,
-    //     ),
-    // ];
+  @override
+  void dispose() {
+    scrollController.dispose();
+    super.dispose();
   }
 
   @override
