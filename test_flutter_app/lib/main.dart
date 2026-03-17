@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:test_flutter_app/ai_chat_handler/ai_chat_page.dart';
 import 'package:test_flutter_app/ai_chat_handler/conversation.dart';
 import 'package:test_flutter_app/new_app.dart';
-import 'package:test_flutter_app/new_page.dart';
+import 'package:test_flutter_app/calendar_page_handler/calendar_page.dart';
 import 'package:test_flutter_app/testing_database/contact_page.dart';
 import 'package:test_flutter_app/ai_chat_handler/message_database.dart';  
 
@@ -49,6 +49,7 @@ class _MainPageState extends State<MainPage> {
   final GlobalKey<HomePageState> homeKey = GlobalKey<HomePageState>();
   final GlobalKey<ContactPageState> contactKey = GlobalKey<ContactPageState>();
   // final GlobalKey<AIChatPageState> aiChatKey = GlobalKey<AIChatPageState>();
+  final GlobalKey<CalendarPageState> calendarKey = GlobalKey<CalendarPageState>();
   
   final ScrollController scrollController = ScrollController();
   
@@ -56,7 +57,7 @@ class _MainPageState extends State<MainPage> {
 
   Future<void> loadConversations() async {
     // if the widget is no longer mounted to the UI tree (i.e. no longer alive because it's destroyed) - exit function immediately
-    if (!mounted) return; 
+    if (!context.mounted) return; 
 
     final conversations = await MessageDatabase.getConversations();
     setState(() {
@@ -108,6 +109,20 @@ class _MainPageState extends State<MainPage> {
         child: const Icon(Icons.add),
       );
 
+    case 3: 
+      return FloatingActionButton(
+        onPressed: () {
+          // calendarKey.currentState?.addEvent();
+          // handling different calendar management operations 
+        },
+        shape: CircleBorder(
+          side: BorderSide(
+            color: Theme.of(context).colorScheme.onPrimary, // use the onPrimary color from the theme for the border
+            width: 2, // set the width of the border
+          ),
+        ),
+        child: const Icon(Icons.add),
+      );
     default:
       return null;
     }
@@ -251,10 +266,13 @@ class _MainPageState extends State<MainPage> {
             },
             onConversationDeleted: deleteConversation,
             ),
+          CalendarPage(),
         ],
       ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: currentPage,
+        fixedColor: Colors.blue[100],
+        unselectedItemColor: Colors.black,
         onTap: (value) {
           setState(() {
             currentPage = value;
@@ -273,6 +291,10 @@ class _MainPageState extends State<MainPage> {
             icon: const Icon(Icons.person),
             label: 'Profile', 
           ),
+          BottomNavigationBarItem(
+              icon: const Icon(Icons.calendar_month_sharp),
+              label: 'Calendar',
+            ),
         ],
       ),
 

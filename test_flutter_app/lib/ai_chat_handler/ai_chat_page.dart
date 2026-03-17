@@ -1,4 +1,5 @@
-import 'package:dash_chat_2/dash_chat_2.dart';
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:test_flutter_app/ai_chat_handler/conversation.dart';
 import 'package:test_flutter_app/ai_chat_handler/message.dart';
@@ -78,6 +79,27 @@ class AIChatPageState extends State<AIChatPage> {
     return modifiedMessage;
   }
 
+  Future<void> generateTitleAsync(String firstMessage, int conversationId) async {
+    String title = "";
+    await aiQueryHandler.streamAIResponse(
+      messageHistory: [{
+        'role': 'user',
+        'content': 'Generate a concise title for a conversation based on the following message: ${textController.text}. The title should be no more than 5 words.'
+      }],
+      onToken: (token) async {
+        setState(() {
+          title += token; // append each token to the title as it arrives                        
+        });
+      }, 
+      onDone: () async {
+        title = title.trim(); // trim any extra whitespace from the generated title
+        // update the conversation title in the database
+        await MessageDatabase.updateConversationTitle(conversationId, title);
+        await widget.onConversationCreated?.call(conversationId); // notify the parent widget that a new conversation has been created and the title has been generated, passing the conversationId as an argument
+      }
+    );
+  }
+
   @override
   void initState() {
     super.initState();
@@ -153,12 +175,15 @@ class AIChatPageState extends State<AIChatPage> {
               IconButton(
                 onPressed: () async {
                   int? conversationId = widget.conversationId;
-                  if (textController.text.trim().isEmpty) return; 
+                  if (textController.text.trim().isEmpty) return; // don't send empty messages 
                   if (widget.conversationId == null) {
                     messageHistModified.clear(); // clear the modified message history when starting a new conversation
-                    messages.clear(); // clear the messages list when starting a new conversation
-                    conversationId = await createNewConversation('New Conversation'); // creates a conversation and updates currentConversationId to the new conversation's id
+                    messages.clear(); // clear the messages list when starting a new conversation                    
+                    String title = "new Conversation";
+                    
+                    conversationId = await createNewConversation(title); // creates a conversation and updates currentConversationId to the new conversation's id
                     await widget.onConversationCreated?.call(conversationId);
+                    generateTitleAsync(textController.text, conversationId); // generate a title for the new conversation based on the first message and update the conversation title in the database
                   } 
                   await createMessage(textController.text, conversationId!, true);
                   await loadMessages(conversationId); // reload messages from the database to include the new message - for displaying as well 

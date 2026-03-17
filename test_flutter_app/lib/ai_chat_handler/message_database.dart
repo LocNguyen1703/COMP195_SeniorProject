@@ -99,6 +99,16 @@ class MessageDatabase {
     );
   }
 
+  static Future<void> updateConversationTitle(int id, String newTitle) async {
+    final db = await _getDatabase();
+    await db.update(
+      'conversations',
+      {'title': newTitle},
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
   static Future<int> deleteMessage(int id) async {
     final db = await _getDatabase(); 
     return await db.delete('messages', where: 'id = ?', whereArgs: [id]);
