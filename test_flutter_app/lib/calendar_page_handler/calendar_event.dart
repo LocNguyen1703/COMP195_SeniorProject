@@ -28,7 +28,7 @@ class CalendarEvent {
     'description': description,
     'start': start.millisecondsSinceEpoch,
     'end': end.millisecondsSinceEpoch,
-    'color': color,
+    'color': color.toARGB32(),
     'recurrenceRule': recurrenceRule,
   };
 
@@ -39,7 +39,12 @@ class CalendarEvent {
     description: map['description'] ?? '',
     start: DateTime.fromMillisecondsSinceEpoch(map['start']),
     end: DateTime.fromMillisecondsSinceEpoch(map['end']),
-    color: Color(map['color']),
+    color: Color.fromARGB(
+      (map['color'] as int) >> 24 & 0xFF, 
+      (map['color'] as int) >> 16 & 0xFF, 
+      (map['color'] as int) >> 8 & 0xFF, 
+      (map['color'] as int) & 0xFF,
+    ),
     recurrenceRule: map['recurrenceRule'],
   );
 

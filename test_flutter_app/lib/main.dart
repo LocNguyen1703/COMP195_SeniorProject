@@ -284,8 +284,8 @@ class _MainPageState extends State<MainPage> {
             label: 'Home',
           ),
           BottomNavigationBarItem(
-            icon: const Icon(Icons.settings),
-            label: 'Settings',
+            icon: const Icon(Icons.phone),
+            label: 'contacts',
           ),
           BottomNavigationBarItem(
             icon: const Icon(Icons.person),

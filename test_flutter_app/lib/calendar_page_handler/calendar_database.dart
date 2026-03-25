@@ -22,7 +22,7 @@ class CalendarDatabase {
           CREATE TABLE calendars (
             calendarId INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL,
-            color TEXT NOT NULL
+            color INTEGER NOT NULL
           );
         ''');
 
@@ -35,7 +35,7 @@ class CalendarDatabase {
             end INTEGER NOT NULL,
             color INTEGER NOT NULL,
             calendarId INTEGER NOT NULL,
-            recurrenceRule TEXT
+            recurrenceRule TEXT,
               FOREIGN KEY (calendarId) REFERENCES calendars(calendarId) ON DELETE CASCADE
           );
         ''');
@@ -88,7 +88,7 @@ class CalendarDatabase {
 
 //--event CRUD
   
-  static Future<List<CalendarEvent>> getAllevents() async {
+  static Future<List<CalendarEvent>> getAllEvents() async {
     final db = await _getDatabase();
     final result = await db.query('events'); 
     return result.map((json) => CalendarEvent.fromMap(json)).toList();
