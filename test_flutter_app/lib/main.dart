@@ -3,6 +3,9 @@ import 'package:test_flutter_app/ai_chat_handler/ai_chat_page.dart';
 import 'package:test_flutter_app/ai_chat_handler/conversation.dart';
 import 'package:test_flutter_app/new_app.dart';
 import 'package:test_flutter_app/calendar_page_handler/calendar_page.dart';
+import 'package:test_flutter_app/calendar_page_handler/calendar_form_widget.dart';
+import 'package:test_flutter_app/calendar_page_handler/calendar_database.dart';
+import 'package:test_flutter_app/calendar_page_handler/calendar.dart';
 import 'package:test_flutter_app/testing_database/contact_page.dart';
 import 'package:test_flutter_app/ai_chat_handler/message_database.dart';  
 
@@ -46,10 +49,13 @@ class _MainPageState extends State<MainPage> {
   int currentPage = 0; 
   int? currentConversationId; 
   List<Conversation> conversations = []; 
+
+  List<Calendar> calendars = [];
+  Set<int> activeCalendarIds = {}; // set of calendar IDs to show events from, if empty show all events
+
   final GlobalKey<HomePageState> homeKey = GlobalKey<HomePageState>();
   final GlobalKey<ContactPageState> contactKey = GlobalKey<ContactPageState>();
-  // final GlobalKey<AIChatPageState> aiChatKey = GlobalKey<AIChatPageState>();
-  final GlobalKey<CalendarPageState> calendarKey = GlobalKey<CalendarPageState>();
+  // final GlobalKey<CalendarPageState> calendarKey = GlobalKey<CalendarPageState>();
   
   final ScrollController scrollController = ScrollController();
   
@@ -79,6 +85,51 @@ class _MainPageState extends State<MainPage> {
     }
   }
   
+  Future<void> loadCalendars() async {
+    if (!context.mounted) return;
+    final loaded = await CalendarDatabase.getAllCalendars();
+    setState(() {
+      this.calendars = loaded;
+      
+      final newIds = loaded
+        .where((c) => c.calendarId != null)
+        .map((c) => c.calendarId!)
+        .toSet();
+      
+      activeCalendarIds = newIds.intersection(activeCalendarIds)..addAll(newIds.difference(activeCalendarIds)); // add any new calendar IDs to the active set and remove any deleted calendar IDs from the active set
+    });
+  }
+
+  void toggleCalendar(int calendarId) {
+    setState(() {
+      if (activeCalendarIds.contains(calendarId)) {
+        activeCalendarIds.remove(calendarId);
+      } else {
+        activeCalendarIds.add(calendarId);
+      }
+    });
+  }
+
+  void toggleAllCalendars(bool selectAll) { 
+    setState(() {
+      if (selectAll) { 
+        activeCalendarIds = calendars
+          .where((c) => c.calendarId != null)
+          .map((c) => c.calendarId!)
+          .toSet();
+      } else {
+        activeCalendarIds.clear();
+      }
+    });
+  }
+
+  bool? get allCalendarCheckboxValues {
+    if (calendars.isEmpty) return false;
+    if (activeCalendarIds.isEmpty) return false;
+    if (activeCalendarIds.length == calendars.length) return true;
+    return null; 
+  }
+
   Widget? _buildFAB() {
     switch (currentPage) {
     case 0:
@@ -130,7 +181,7 @@ class _MainPageState extends State<MainPage> {
 
   Widget? _buildDrawer() {
     switch(currentPage) {
-      case != 2: 
+      case 0 || 1: 
         return Drawer(
           child: ListView(
             padding: EdgeInsets.zero,
@@ -226,6 +277,95 @@ class _MainPageState extends State<MainPage> {
             // future: aiChatKey.currentState?.loadConversations()
         );
 
+      case 3: 
+        return Drawer(
+          child: Column(
+            children: [
+              DrawerHeader(
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                child: const SizedBox(
+                  width: double.infinity,
+                  child: Text('Calendars', style: TextStyle(fontSize: 23),),
+                ),
+              ),
+
+              ListTile(
+                leading: Checkbox(
+                  tristate: true,
+                  value: allCalendarCheckboxValues, 
+                  onChanged: (v) => toggleAllCalendars(v ?? false),
+                ),
+                title: Text('Select All'),
+              ),
+
+              const Divider(height: 1),
+
+              Expanded(
+                child: ListView.builder(
+                  itemCount: calendars.length,
+                  itemBuilder: (context, index) {
+                    final displayCal = calendars[index];
+                    final isActive = activeCalendarIds.contains(displayCal.calendarId);
+                    return ListTile(
+                      leading: Checkbox(
+                        value: isActive,
+                        activeColor: displayCal.color,
+                        onChanged: (_) => toggleCalendar(displayCal.calendarId!),
+                      ),
+                      title: Text(displayCal.name),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          CircleAvatar(backgroundColor: displayCal.color, radius: 8,),
+                          const SizedBox(width: 4), 
+                          IconButton(
+                            icon: const Icon(Icons.edit, size: 18),
+                            onPressed: () async {
+                              final result = await showDialog<bool>(
+                                context: context,
+                                builder: (context) => AlertDialog(
+                                  title: const Text('Edit Calendar'),
+                                  content: CalendarFormWidget(calendar: displayCal),
+                                )
+                              );
+                              if (result == true) await loadCalendars(); // refresh the calendar list after editing a calendar to reflect any changes made (e.g., name or color changes)
+                            },
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ),
+
+              const Divider(height: 1),
+
+              TextButton(onPressed: (){}, child: BackButton()),
+
+              // Add_calendar button at the bottom of the drawer
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: ElevatedButton.icon(
+                  onPressed: () async { 
+                    final result = await showDialog(
+                      context: context,
+                      builder: (context) => AlertDialog(
+                        title: const Text('Create Calendar'),
+                        content: const CalendarFormWidget(),
+                      ),
+                    );
+                    if (result == true) await loadCalendars();
+                  },
+                  icon: const Icon(Icons.add), 
+                  label: const Text('Add Calendar'),  
+                ),
+              )
+            ]
+          )
+        );
+
       default:
         return null;
     }
@@ -235,6 +375,7 @@ class _MainPageState extends State<MainPage> {
   void initState() {
     super.initState();
     loadConversations();
+    loadCalendars();
   }
 
   @override
@@ -266,7 +407,10 @@ class _MainPageState extends State<MainPage> {
             },
             onConversationDeleted: deleteConversation,
             ),
-          CalendarPage(),
+          CalendarPage(
+            activeCalendarIds: activeCalendarIds,
+            calendars: calendars,
+          ),
         ],
       ),
       bottomNavigationBar: BottomNavigationBar(

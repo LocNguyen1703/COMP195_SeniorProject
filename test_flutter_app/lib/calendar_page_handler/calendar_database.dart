@@ -8,7 +8,7 @@ class CalendarDatabase {
   static Future<Database> _getDatabase() async {
     final database = await openDatabase(
       'calendarEvents.db',
-      version: 1,
+      version: 1, // bump this number up for database upgrades for future deployments
       onCreate: (Database db, int version) async {
         await db.execute('''
           DROP TABLE IF EXISTS calendars;
@@ -39,6 +39,37 @@ class CalendarDatabase {
               FOREIGN KEY (calendarId) REFERENCES calendars(calendarId) ON DELETE CASCADE
           );
         ''');
+
+        await db.insert('calendars', {
+          'name': 'Personal',
+          'color': Colors.blue.toARGB32(),
+        });
+
+        await db.insert('calendars', {
+          'name': 'Holidays',
+          'color': Colors.green.toARGB32(),
+        });
+      },
+
+      onUpgrade: (Database db, int oldVersion, int newVersion) async {
+        if (oldVersion < newVersion) {
+          await db.execute('DROP TABLE IF EXISTS calendars;');
+          await db.execute('DROP TABLE IF EXISTS events;');
+          await _getDatabase(); // recreate the database with the new schema
+          
+          final existingCalendars = await db.query('calendars');
+          if (existingCalendars.isEmpty) {
+            await db.insert('calendars', {
+              'name': 'Personal',
+              'color': Colors.blue.toARGB32(),
+            });
+
+            await db.insert('calendars', {
+              'name': 'Holidays',
+              'color': Colors.green.toARGB32(),
+            });
+          }
+        }
       },
     );
 
