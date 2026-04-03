@@ -19,6 +19,8 @@ class EventFormWidget extends StatefulWidget {
 
 class EventFormWidgetState extends State<EventFormWidget> {
   final _formKey = GlobalKey<FormState>();
+  String? endDateError; 
+  String? endTimeError; 
 
   // initial values for form fields
   String title = ''; 
@@ -74,8 +76,17 @@ class EventFormWidgetState extends State<EventFormWidget> {
     setState(() {
       if (isStart) {
         startDate = DateTime(picked.year, picked.month, picked.day, startDate.hour, startDate.minute);  
+      } if (!endDate.isAfter(startDate)) {
+        endDate = startDate.add(const Duration(hours: 1));
       } else {
-        endDate = DateTime(picked.year, picked.month, picked.day, endDate.hour, endDate.minute);
+        final proposedEnd = DateTime(picked.year, picked.month, picked.day, endDate.hour, endDate.minute);
+        if (!proposedEnd.isAfter(startDate)) {
+          endDateError = "End date must be after start date";
+          return;
+        } else {
+          endDate = proposedEnd;
+          endDateError = null;
+        }
       }
     });
   }
@@ -91,11 +102,17 @@ class EventFormWidgetState extends State<EventFormWidget> {
     setState(() {
       if (isStart) {
         startDate = DateTime(startDate.year, startDate.month, startDate.day, picked.hour, picked.minute);
-        if (endDate.isBefore(startDate)) {
+        if (endDate.isAtSameMomentAs(startDate) || endDate.isBefore(startDate)) {
         endDate = startDate.add(const Duration(hours: 1));
         }
       } else {
-        endDate = DateTime(endDate.year, endDate.month, endDate.day, picked.hour, picked.minute);
+        final proposedEnd = DateTime(endDate.year, endDate.month, endDate.day, picked.hour, picked.minute);
+        if(!proposedEnd.isAfter(startDate)) {
+          endTimeError = "End time must be after start time";
+          return; 
+        }
+        endDate = proposedEnd; 
+        endTimeError = null;
       }
     });
   }
@@ -203,6 +220,20 @@ class EventFormWidgetState extends State<EventFormWidget> {
                   IconButton(onPressed: () => pickDate(false), icon: Icon(Icons.calendar_today)),
                   IconButton(onPressed: () => pickTime(false), icon: Icon(Icons.access_time))
                 ],
+              )
+            ),
+            if(endDateError != null) Padding(
+              padding: const EdgeInsets.only(left: 4, top: 2), 
+              child: Text(
+                endDateError!,
+                style: const TextStyle(color: Colors.red, fontSize: 12,),
+              )
+            ),
+            if (endTimeError != null) Padding(
+              padding: const EdgeInsets.only(left: 4, top: 2), 
+              child: Text(
+                endTimeError!,
+                style: const TextStyle(color: Colors.red, fontSize: 12,),
               )
             ),
 

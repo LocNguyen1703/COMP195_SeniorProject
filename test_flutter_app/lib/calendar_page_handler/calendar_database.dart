@@ -51,6 +51,10 @@ class CalendarDatabase {
         });
       },
 
+      onConfigure: (Database db) async {
+        await db.execute('PRAGMA foreign_keys = ON');
+      },
+
       onUpgrade: (Database db, int oldVersion, int newVersion) async {
         if (oldVersion < newVersion) {
           await db.execute('DROP TABLE IF EXISTS calendars;');

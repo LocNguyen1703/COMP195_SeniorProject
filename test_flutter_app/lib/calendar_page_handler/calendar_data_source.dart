@@ -7,33 +7,53 @@ class EventDataSource extends CalendarDataSource {
     appointments = source;
   }
 
+  CalendarEvent getCalendarEvent(int index) {
+    return appointments![index] as CalendarEvent;
+  }
+
   @override
   DateTime getStartTime(int index) {
-    return appointments![index].start;
+    return getCalendarEvent(index).start;
   }
 
   @override
   DateTime getEndTime(int index) {
-    return appointments![index].end;
+    return getCalendarEvent(index).end;
   }
 
   @override
   String getSubject(int index) {
-    return appointments![index].title;
+    return getCalendarEvent(index).title;
   }
 
   //can I do this?
-  String getDescription(int index) {
-    return appointments![index].description;
+  @override
+  String? getNotes(int index) {
+    return getCalendarEvent(index).description;
   }
 
   @override
   Color getColor(int index) {
-    return appointments![index].color;
+    return getCalendarEvent(index).color;
+  }
+
+  @override 
+  Object? getId(int index) {
+    return getCalendarEvent(index).id ?? index;
+  }
+
+  @override
+  String? getStartTimeZone(int index) { 
+    return null; // not using time zones in this implementation
+  }
+
+  @override
+  String? getEndTimeZone(int index) {
+    return null; // not using time zones in this implementation
   }
 
   @override
   String? getRecurrenceRule(int index) {
-    return appointments![index].recurrenceRule;
+    return getCalendarEvent(index).recurrenceRule;
   }
 }
