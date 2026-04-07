@@ -9,6 +9,11 @@ class CalendarDatabase {
     final database = await openDatabase(
       'calendarEvents.db',
       version: 1, // bump this number up for database upgrades for future deployments
+
+      onConfigure: (Database db) async {
+        await db.execute('PRAGMA foreign_keys = ON');
+      },
+
       onCreate: (Database db, int version) async {
         await db.execute('''
           DROP TABLE IF EXISTS calendars;
@@ -49,10 +54,6 @@ class CalendarDatabase {
           'name': 'Holidays',
           'color': Colors.green.toARGB32(),
         });
-      },
-
-      onConfigure: (Database db) async {
-        await db.execute('PRAGMA foreign_keys = ON');
       },
 
       onUpgrade: (Database db, int oldVersion, int newVersion) async {

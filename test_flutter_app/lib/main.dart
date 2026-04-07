@@ -8,6 +8,7 @@ import 'package:test_flutter_app/calendar_page_handler/calendar_database.dart';
 import 'package:test_flutter_app/calendar_page_handler/calendar.dart';
 import 'package:test_flutter_app/testing_database/contact_page.dart';
 import 'package:test_flutter_app/ai_chat_handler/message_database.dart';  
+import 'package:test_flutter_app/to_do_list_handler/todo_list_page.dart';
 
 /*handy VSCode shortcuts for refactoring: 
 Alt + Click: Place cursors at arbitrary, non-consecutive locations in the file.
@@ -60,6 +61,8 @@ class _MainPageState extends State<MainPage> {
   final ScrollController scrollController = ScrollController();
   
   List<Widget> pages = [];
+
+  int todoCreateTrigger = 0; 
 
   Future<void> loadConversations() async {
     // if the widget is no longer mounted to the UI tree (i.e. no longer alive because it's destroyed) - exit function immediately
@@ -174,6 +177,15 @@ class _MainPageState extends State<MainPage> {
         ),
         child: const Icon(Icons.add),
       );
+    case 4: 
+      return FloatingActionButton(
+        onPressed: () {
+          setState(() {
+            todoCreateTrigger++; // increment the trigger to signal the TodoListPage to show the create dialog
+          });
+        },
+        child: const Icon(Icons.add),
+      ); 
     default:
       return null;
     }
@@ -411,6 +423,7 @@ class _MainPageState extends State<MainPage> {
             activeCalendarIds: activeCalendarIds,
             calendars: calendars,
           ),
+          TodoListPage(createTrigger: todoCreateTrigger),
         ],
       ),
       bottomNavigationBar: BottomNavigationBar(
@@ -438,6 +451,10 @@ class _MainPageState extends State<MainPage> {
           BottomNavigationBarItem(
               icon: const Icon(Icons.calendar_month_sharp),
               label: 'Calendar',
+            ),
+          BottomNavigationBarItem(
+              icon: const Icon(Icons.checklist),
+              label: 'To-Do List',
             ),
         ],
       ),
