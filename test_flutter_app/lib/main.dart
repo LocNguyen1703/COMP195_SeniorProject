@@ -63,6 +63,7 @@ class _MainPageState extends State<MainPage> {
   List<Widget> pages = [];
 
   int todoCreateTrigger = 0; 
+  int calendarReloadTrigger = 0;
 
   Future<void> loadConversations() async {
     // if the widget is no longer mounted to the UI tree (i.e. no longer alive because it's destroyed) - exit function immediately
@@ -418,10 +419,22 @@ class _MainPageState extends State<MainPage> {
               });
             },
             onConversationDeleted: deleteConversation,
-            ),
+            onTodoAction: () async {
+              setState(() {
+                todoCreateTrigger++; // increment the trigger to signal the TodoListPage to show the create dialog
+              });
+            },
+            onCalendarAction: () async {
+              await loadCalendars(); // reload calendars to get the latest calendar data after a calendar action is executed
+              setState(() {
+                calendarReloadTrigger++; // increment the trigger to signal the CalendarPage to reload events from the database
+              });
+            },
+          ),
           CalendarPage(
             activeCalendarIds: activeCalendarIds,
             calendars: calendars,
+            reloadTrigger: calendarReloadTrigger,
           ),
           TodoListPage(createTrigger: todoCreateTrigger),
         ],

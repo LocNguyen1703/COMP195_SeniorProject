@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:test_flutter_app/ai_chat_handler/ai_action_parser.dart';
 import 'package:test_flutter_app/ai_chat_handler/conversation.dart';
 import 'package:test_flutter_app/ai_chat_handler/message.dart';
 import 'package:test_flutter_app/ai_chat_handler/message_database.dart';
@@ -12,10 +13,15 @@ class AIChatPage extends StatefulWidget {
       this.conversationId,
       this.onConversationCreated,
       this.onConversationDeleted,
+      this.onTodoAction,
+      this.onCalendarAction,
   });
   final Future<void> Function(int)? onConversationCreated; // callback function to notify the parent widget when a conversation is updated (e.g., when a new message is added or a conversation is created)
   final Future<void> Function(int)? onConversationDeleted; // callback function to notify the parent widget when a conversation is deleted, passing the id of the deleted conversation as an argument
-  final int? conversationId; 
+  final VoidCallback? onTodoAction; // callback function to notify the parent widget when a to-do action is parsed from the AI's response, passing the action as an argument
+  final VoidCallback? onCalendarAction; // callback function to notify the parent widget when a calendar action is parsed from the AI's response, passing the action as an argument
+  final int? conversationId;
+
   @override
   State<AIChatPage> createState() => AIChatPageState();
 }
@@ -34,12 +40,17 @@ class AIChatPageState extends State<AIChatPage> {
     if (currentConversationId == -1 || currentConversationId == null) {
       setState(() {
         this.messages = []; // clear messages if no conversation is selected
+        messageHistModified = []; // clear the modified message history if no conversation is selected
       });
       return;
     }
     final messages = await MessageDatabase.getMessage(currentConversationId);
     setState(() {
       this.messages = messages;
+      messageHistModified = messages.map((message) => <String, String>{
+        'role': message.isUser ? 'user' : 'assistant', // determine the role based on the isUser attribute of the Message object
+        'content': message.text, // use the text attribute of the Message object as the content of the message
+      }).toList(); // convert the list of Message objects into the format expected by the Ollama API and update the modified message history
     }); 
   }
 
@@ -72,7 +83,7 @@ class AIChatPageState extends State<AIChatPage> {
     Future<Map<String, String>> mapMessage(List<Map<String, String>> messageHistModified, List<Message> messageHistory) async {
     Message lastMessage = messageHistory.last; // get the last message from the message history
     Map<String, String> modifiedMessage = <String, String>{
-      'role': lastMessage.isUser ? 'user' : 'system', // determine the role based on the isUser attribute of the Message object
+      'role': lastMessage.isUser ? 'user' : 'assistant', // determine the role based on the isUser attribute of the Message object
       'content': lastMessage.text, // use the text attribute of the Message object as the content of the message
     };
     
@@ -84,7 +95,7 @@ class AIChatPageState extends State<AIChatPage> {
     await aiQueryHandler.streamAIResponse(
       messageHistory: [{
         'role': 'user',
-        'content': 'Generate a concise title for a conversation based on the following message: ${textController.text}. The title should be no more than 5 words.'
+        'content': 'Generate a concise title for a conversation based on the following message: ${textController.text}. The title should be no more than 5 words. do NOT include any <ACTION> block in the title.'
       }],
       onToken: (token) async {
         setState(() {
@@ -218,6 +229,27 @@ class AIChatPageState extends State<AIChatPage> {
                         messages[messages.length-1].id!, // update the last message in the database with the full AI response once the streaming is done
                         fullResponse,
                       );
+
+                      final parsed = AIActionParser.parse(fullResponse); // parse the AI's response to check for any embedded actions
+                      final displayText = parsed.action != null? parsed.cleanText : fullResponse; // if an action is parsed, use the clean text without the action block for display; otherwise, use the full response
+
+                      await MessageDatabase.updateMessage(
+                        messages[messages.length-1].id!, // update the last message in the database with the clean text for display (removing the action block if it exists)
+                        displayText,
+                      );
+
+                      if (parsed.action != null) { 
+                        final actionType = await AIActionParser.execute(parsed.action!); // execute the parsed action and get the type of action that was executed (e.g., "todo_list_added" or "calendar_event_added")
+
+                        setState(() {
+                          messages[messages.length-1] = messages[messages.length-1].copyWith(
+                            text: parsed.cleanText, // update the last message in the messages list to remove the action block from the displayed text
+                          );
+                        });
+
+                        if (actionType != null && actionType.contains('todo')) widget.onTodoAction?.call();
+                        if (actionType != null && actionType.contains('calendar')) widget.onCalendarAction?.call();
+                      }
                     });
 
                   // await createMessage(aiResponse, conversationId, false); // create a new message in the database for the AI's response

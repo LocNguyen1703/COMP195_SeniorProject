@@ -9,11 +9,14 @@ import 'package:test_flutter_app/calendar_page_handler/event_form_widget.dart';
 class CalendarPage extends StatefulWidget {  
   final Set<int> activeCalendarIds; // set of calendar IDs to show events from, if empty show all events
   final List<Calendar> calendars;
+
+  final int reloadTrigger; 
   
   const CalendarPage({
     super.key,
     required this.activeCalendarIds,
     required this.calendars,
+    this.reloadTrigger = 0,
   });
 
   @override
@@ -159,6 +162,10 @@ class CalendarPageState extends State<CalendarPage> {
   @override
   void didUpdateWidget(covariant CalendarPage oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (oldWidget.reloadTrigger != widget.reloadTrigger) {
+      loadEvents(); // reload events from the database if the reload trigger changes
+    }
+
     if (oldWidget.activeCalendarIds != widget.activeCalendarIds) {
       final filtered = events
       .where((e) => widget.activeCalendarIds.contains(e.calendarId))
