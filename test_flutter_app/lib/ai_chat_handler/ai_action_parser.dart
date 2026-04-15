@@ -62,7 +62,7 @@ class AIActionParser {
       case 'create_todo_item':
         final lists = await TodoDatabase.getAllTodoLists();
         final match = lists.where((l) => 
-          l.title.toLowerCase() == (payload['ListTitle'] ?? '').toLowerCase() ).firstOrNull;
+          l.title.toLowerCase() == (payload['listTitle'] ?? '').toLowerCase() ).firstOrNull;
 
         if (match == null) return null; 
         await TodoDatabase.addTodoItem(TodoItem(

@@ -9,6 +9,8 @@ import 'package:test_flutter_app/calendar_page_handler/calendar.dart';
 import 'package:test_flutter_app/testing_database/contact_page.dart';
 import 'package:test_flutter_app/ai_chat_handler/message_database.dart';  
 import 'package:test_flutter_app/to_do_list_handler/todo_list_page.dart';
+import 'package:test_flutter_app/to_do_list_handler/todo_database.dart';
+import 'package:test_flutter_app/to_do_list_handler/todo_list.dart';
 
 /*handy VSCode shortcuts for refactoring: 
 Alt + Click: Place cursors at arbitrary, non-consecutive locations in the file.
@@ -64,6 +66,8 @@ class _MainPageState extends State<MainPage> {
 
   int todoCreateTrigger = 0; 
   int calendarReloadTrigger = 0;
+
+  Map<String, List<TodoList>> groupedTodoLists = {};
 
   Future<void> loadConversations() async {
     // if the widget is no longer mounted to the UI tree (i.e. no longer alive because it's destroyed) - exit function immediately
@@ -127,6 +131,28 @@ class _MainPageState extends State<MainPage> {
     });
   }
 
+  Future<void> loadGroupedTodoLists() async {
+  final lists = await TodoDatabase.getAllTodoLists();
+
+  final Map<String, List<TodoList>> grouped = {};
+
+  for (final list in lists) {
+    final category = (list.category.isEmpty) ? 'Uncategorized' : list.category;
+
+    grouped.putIfAbsent(category, () => []).add(list);
+  }
+
+  // Sort lists inside each category
+  for (final entry in grouped.entries) {
+    entry.value.sort((a, b) => a.title.toLowerCase().compareTo(b.title.toLowerCase()));
+  }
+
+  setState(() {
+  groupedTodoLists = grouped; // store the grouped lists in the state variable to be used for rendering the to-do lists in the drawer
+    
+  });
+}
+
   bool? get allCalendarCheckboxValues {
     if (calendars.isEmpty) return false;
     if (activeCalendarIds.isEmpty) return false;
@@ -180,7 +206,7 @@ class _MainPageState extends State<MainPage> {
       );
     case 4: 
       return FloatingActionButton(
-        onPressed: () {
+        onPressed: () async {
           setState(() {
             todoCreateTrigger++; // increment the trigger to signal the TodoListPage to show the create dialog
           });
@@ -379,6 +405,66 @@ class _MainPageState extends State<MainPage> {
           )
         );
 
+      case 4: 
+        final categories = groupedTodoLists.keys.toList()..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+        return Drawer(
+          child: Column(
+            children: [
+              DrawerHeader(
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                child: const SizedBox(
+                  width: double.infinity,
+                  child: Text('To-Do Lists', style: TextStyle(fontSize: 23),),
+                ),
+              ),
+
+              // List of to-do lists would go here, similar to the calendar drawer implementation but for to-do lists instead of calendars
+
+              Expanded(
+                child: groupedTodoLists.isEmpty
+                  ? const Center(child: CircularProgressIndicator())
+                  : ListView.builder(
+                      itemCount: categories.length,
+                      itemBuilder: (context, index) {
+                        final category = categories[index];
+                        final lists = groupedTodoLists[category]!;
+
+                        return ExpansionTile(
+                          title: Text(category),
+                          children: lists.map((list) {
+                            return ListTile(
+                              title: Text(list.title),
+                              onTap: () {
+                                // Handle to-do list tap (e.g., load the to-do list in the main area)
+                              },  
+                            );
+                          }).toList(),
+                        );
+                      },
+                    ),
+              ),
+
+              const Divider(height: 1),
+
+              // Add To-Do List button at the bottom of the drawer
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: ElevatedButton.icon(
+                  onPressed: () async { 
+                    setState(() {
+                      todoCreateTrigger++; // increment the trigger to signal the TodoListPage to show the create dialog
+                    });
+                  },
+                  icon: const Icon(Icons.add), 
+                  label: const Text('Add To-Do List'),  
+                ),
+              )
+            ]
+          )
+        ); 
+
       default:
         return null;
     }
@@ -389,6 +475,7 @@ class _MainPageState extends State<MainPage> {
     super.initState();
     loadConversations();
     loadCalendars();
+    loadGroupedTodoLists();
   }
 
   @override
@@ -436,7 +523,12 @@ class _MainPageState extends State<MainPage> {
             calendars: calendars,
             reloadTrigger: calendarReloadTrigger,
           ),
-          TodoListPage(createTrigger: todoCreateTrigger),
+          TodoListPage(
+            createTrigger: todoCreateTrigger,
+            onListChanged: () async {
+              await loadGroupedTodoLists(); // reload the grouped to-do lists to get the latest data after a to-do list is created, updated, or deleted in the TodoListPage
+            },
+          ),
         ],
       ),
       bottomNavigationBar: BottomNavigationBar(

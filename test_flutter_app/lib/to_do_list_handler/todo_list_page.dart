@@ -5,12 +5,14 @@ import 'package:test_flutter_app/to_do_list_handler/todo_list.dart';
 
 class TodoListPage extends StatefulWidget {
   // final VoidCallback? onFabPressed; // callback for when the FAB is pressed, if needed
+  final VoidCallback? onListChanged;
   final int createTrigger; 
   
   const TodoListPage({
     super.key,
     // this.onFabPressed,
     this.createTrigger = 0, // pass the create trigger from the parent widget
+    this.onListChanged,
   });
 
   @override
@@ -118,44 +120,141 @@ class TodoListPageState extends State<TodoListPage> {
   }
 
   Future<void> showCreateDialog() async {
-    final controller = TextEditingController(); 
+    final formKey = GlobalKey<FormState>();
+
+    final titleController = TextEditingController(); 
+    final descriptionController = TextEditingController();
+    final customCategoryController = TextEditingController();
+
+    String selectedCategory = 'General'; 
+    final categories = ['General', 'Work', 'School', 'Personal', 'Shopping', 'Others']; // example categories
     
     final result = await showDialog<bool>(
       context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('New list'),
-        content: TextField(
-          controller: controller,
-          decoration: const InputDecoration(
-            hintText: 'List title'
-          ),
-        ),
+      builder: (context) {
+        return StatefulBuilder(builder: (context, setState) {
+          return AlertDialog(
+            title: const Text('New list'),
+            // content: TextField(
+            //   controller: controller,
+            //   decoration: const InputDecoration(
+            //     hintText: 'List title'
+            //   ),
+            // ),
+            content: Form(
+              key: formKey,
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextFormField(
+                      controller: titleController,
+                      decoration: const InputDecoration(
+                        labelText: 'List Title',
+                      ),
+                      validator: (v) {
+                        if (v == null || v.trim().isEmpty) {
+                          return 'Title cannot be empty';
+                        }
+                        return null;
+                      },
+                    ),
 
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              await TodoDatabase.addTodoList(
-                TodoList(
-                  title: controller.text, 
-                  category: '',
-                  description: '',
-                  createdAt: DateTime.now(),
-                  color: Colors.blue,
-                )
-              );
-              Navigator.pop(context, true);
-            }, 
-            child: const Text('Create'))
-        ],
-      ),
+                    const SizedBox(height: 12),
+
+                    DropdownButtonFormField<String>(
+                      initialValue: selectedCategory,
+                      decoration: const InputDecoration(labelText: 'Category'),
+                      items: categories.map((c) {
+                        return DropdownMenuItem(
+                          value: c,
+                          child: Text(c),
+                        );
+                      }).toList(), 
+                      onChanged: (value) {
+                        setState(() {
+                          selectedCategory = value!; 
+                        });
+                      },
+                    ),
+
+                    const SizedBox(height: 12),
+
+                    if (selectedCategory == 'Others') 
+                      TextFormField(
+                        controller: customCategoryController,
+                        decoration: const InputDecoration(
+                          labelText: 'Custom Category',
+                        ),
+                        validator: (v) {
+                          if (selectedCategory == 'Others' && (v == null || v.trim().isEmpty)) {
+                            return 'Please enter a custom category';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 12),
+
+                    TextFormField(
+                      controller: descriptionController,
+                      decoration: const InputDecoration(
+                        labelText: 'Description (optional',
+                      ),
+                      maxLines: 3,
+                      validator: (v) {
+                        if (v != null && v.length > 200) {
+                          return 'Description cannot be longer than 200 characters';
+                        }
+                        return null;
+                      },
+                    )
+                  ],
+                ),
+              ),
+            ),
+
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                onPressed: () async {
+                  if (!(formKey.currentState?.validate() ?? false)) {
+                    return; // if form is not valid, do not proceed
+                  }
+
+                  String finalCategory = selectedCategory;
+
+                  if (finalCategory == 'Others') {
+                    finalCategory = customCategoryController.text.trim();
+                    
+                    if (!categories.contains(finalCategory)) {
+                      categories.insert(categories.length - 1, finalCategory); // add new category before 'Others'
+                    }
+                  }
+
+                  await TodoDatabase.addTodoList(
+                    TodoList(
+                      title: titleController.text.trim(), 
+                      category: finalCategory,
+                      description: descriptionController.text.trim(),
+                      createdAt: DateTime.now(),
+                      color: Colors.blue,
+                    )
+                  );
+                  Navigator.pop(context, true);
+                }, 
+                child: const Text('Create'))
+            ],
+          );
+        });
+      } 
     );
 
     if (result == true) {
       await loadTodoLists();
+      widget.onListChanged?.call(); // notify parent widget that a new list has been created
     }
   }
 
@@ -235,6 +334,7 @@ class TodoListPageState extends State<TodoListPage> {
 
                     if (confirm == true) {
                       deleteTodoList(list.id!);
+                      widget.onListChanged?.call(); // notify parent widget that a list has been deleted
                     }
                   }
                 ),
