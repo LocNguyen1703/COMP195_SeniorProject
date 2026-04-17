@@ -73,11 +73,12 @@ class AIqueryHandler {
     <ACTION>
     {"action": "create_todo_list", 
     "payload": {
-      "title": "...", 
-      "category": '...',
-      "description": '...',
-      "createdAt": 2026-04-15T10:00:00,
-      "color": Colors.blue,
+      "title": "Homework", 
+      "category": "School",
+      "description": "Tasks for schoolwork",
+      "createdAt": "2026-04-15T10:00:00",
+      "color": "blue",
+      "items": ["Finish math", "Study CS, prepare for exam"]
       }
     }
     </ACTION>
@@ -87,9 +88,9 @@ class AIqueryHandler {
     <ACTION>
     {"action": "create_todo_item", 
     "payload": {
-      "listId": "listId", 
-      "description": "...",
-      "createdAt": 2026-04-15T10:00:00,
+      "listTitle": "Homework", 
+      "description": "study CS",
+      "createdAt": "2026-04-15T10:00:00",
       "priority": 2, 
       "isDone": false
       }

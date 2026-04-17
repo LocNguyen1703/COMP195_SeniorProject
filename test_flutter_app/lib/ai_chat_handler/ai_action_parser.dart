@@ -10,7 +10,15 @@ class AIActionParser {
     static String fixJson(String input) {
     return input
         .replaceAll(RegExp(r',\s*}'), '}')
-        .replaceAll(RegExp(r',\s*]'), ']');
+        .replaceAll(RegExp(r',\s*]'), ']')
+        .replaceAllMapped(RegExp(r'(?<!")(\b\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\b)(?!")'), 
+          (m) => '"${m[0]}"')
+      // replace Colors.blue → "blue"
+        .replaceAllMapped(RegExp(r'Colors\s*\.\s*(\w+)'), (m) => '"${m[1]}"')
+      // convert {item1, item2} → [item1, item2]
+        .replaceAllMapped(RegExp(r'items"\s*:\s*{([^}]*)}'), (m) {
+        return '"items": [${m[1]}]';
+      });  
   }
 
   static ({String cleanText, Map<String, dynamic>? action}) parse(String response) {
@@ -22,11 +30,18 @@ class AIActionParser {
     final jsonStr = match.group(1)!.trim(); 
     final cleanText = response.replaceAll(regex, '').trim();
 
+    debugPrint("RAW JSON:\n$jsonStr");
+
+    final fixed = fixJson(jsonStr);
+
+    debugPrint("FIXED JSON:\n$fixed");
+
     try {
       final fixed = fixJson(jsonStr);
       final action = jsonDecode(fixed) as Map<String, dynamic>;
       return (cleanText: cleanText, action: action);
     } catch (e) {
+      debugPrint('FAILED JSON:\n$fixed');
       debugPrint('Error parsing action JSON: $e');
       return (cleanText: response, action: null);
     }
@@ -46,8 +61,8 @@ class AIActionParser {
 
         final list = TodoList(
           title: listTitle as String? ?? 'Untitled List',
-          category: '',
-          description: '',
+          category: payload['category'] as String? ?? 'General',
+          description: payload['description'] as String? ?? '',
           createdAt: DateTime.now(),
           color: Colors.blue,
         );
