@@ -95,7 +95,7 @@ class AIChatPageState extends State<AIChatPage> {
     await aiQueryHandler.streamAIResponse(
       messageHistory: [{
         'role': 'user',
-        'content': 'Generate a concise title for a conversation based on the following message: ${textController.text}. The title should be no more than 5 words. do NOT include any <ACTION> block in the title.'
+        'content': 'Generate a concise title for a conversation based on the following message: ${textController.text} within no more than 7 words, and WITHOUT any <ACTION> block.'
       }],
       onToken: (token) async {
         setState(() {
@@ -110,6 +110,58 @@ class AIChatPageState extends State<AIChatPage> {
       }
     );
   }
+
+  Future<bool?> showActionConfirmationDialog(Map<String, dynamic> action) async {
+  final type = action['action'] as String? ?? '';
+  final payload = action['payload'] as Map<String, dynamic>? ?? {};
+
+  String title;
+  String summary;
+
+  switch (type) {
+    case 'create_calendar_event':
+      title = 'Create Calendar Event?';
+      final start = payload['start'] ?? '?';
+      final end = payload['end'] ?? '?';
+      final desc = (payload['description'] as String?) ?? '';
+      summary = 'Title: ${payload['title'] ?? '?'}\nFrom: $start\nTo: $end${desc.isNotEmpty ? '\nDescription: $desc' : ''}';
+      break;
+    case 'create_todo_list':
+      title = 'Create To-Do List?';
+      final items = (payload['items'] as List<dynamic>?)
+          ?.map((e) => '• $e')
+          .join('\n') ?? 'No items';
+      summary = 'Title: ${payload['title'] ?? '?'}\n$items';
+      break;
+    case 'create_todo_item':
+      title = 'Add Task?';
+      summary = 'Add "${payload['description'] ?? '?'}" '
+          'to list "${payload['listTitle'] ?? '?'}"';
+      break;
+    default:
+      title = 'Confirm Action';
+      summary = 'Unknown action: $type';
+  }
+
+  return showDialog<bool>(
+    context: context,
+    barrierDismissible: false,
+    builder: (_) => AlertDialog(
+      title: Text(title),
+      content: Text(summary),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context, false),
+          child: const Text('Cancel'),
+        ),
+        ElevatedButton(
+          onPressed: () => Navigator.pop(context, true),
+          child: const Text('Confirm'),
+        ),
+      ],
+    ),
+  );
+}
 
   @override
   void initState() {
@@ -225,13 +277,14 @@ class AIChatPageState extends State<AIChatPage> {
                       }); // update the UI to display the new token as it arrives  
                     }, 
                     onDone: () async {
-                      await MessageDatabase.updateMessage(
-                        messages[messages.length-1].id!, // update the last message in the database with the full AI response once the streaming is done
-                        fullResponse,
-                      );
-
                       final parsed = AIActionParser.parse(fullResponse); // parse the AI's response to check for any embedded actions
                       final displayText = parsed.action != null? parsed.cleanText : fullResponse; // if an action is parsed, use the clean text without the action block for display; otherwise, use the full response
+
+                      setState(() {
+                        messages[messages.length-1] = messages[messages.length-1].copyWith(
+                          text: parsed.cleanText, // update the last message in the messages list to remove the action block from the displayed text
+                        );
+                      });
 
                       await MessageDatabase.updateMessage(
                         messages[messages.length-1].id!, // update the last message in the database with the clean text for display (removing the action block if it exists)
@@ -239,16 +292,13 @@ class AIChatPageState extends State<AIChatPage> {
                       );
 
                       if (parsed.action != null) { 
-                        final actionType = await AIActionParser.execute(parsed.action!); // execute the parsed action and get the type of action that was executed (e.g., "todo_list_added" or "calendar_event_added")
+                        final confirmed = await showActionConfirmationDialog(parsed.action!); // if an action is parsed, show a confirmation dialog to the user with the details of the action and ask for confirmation before executing it
+                          if (confirmed == true){
+                            final actionType = await AIActionParser.execute(parsed.action!); // execute the parsed action and get the type of action that was executed (e.g., "todo_list_added" or "calendar_event_added")
+                            if (actionType != null && actionType.contains('todo')) widget.onTodoAction?.call();
+                            if (actionType != null && actionType.contains('calendar')) widget.onCalendarAction?.call();          
+                          } 
 
-                        setState(() {
-                          messages[messages.length-1] = messages[messages.length-1].copyWith(
-                            text: parsed.cleanText, // update the last message in the messages list to remove the action block from the displayed text
-                          );
-                        });
-
-                        if (actionType != null && actionType.contains('todo')) widget.onTodoAction?.call();
-                        if (actionType != null && actionType.contains('calendar')) widget.onCalendarAction?.call();
                       }
                     });
 

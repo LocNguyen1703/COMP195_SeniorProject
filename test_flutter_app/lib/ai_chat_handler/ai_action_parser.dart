@@ -7,6 +7,12 @@ import 'package:test_flutter_app/calendar_page_handler/calendar_database.dart';
 import 'package:test_flutter_app/calendar_page_handler/calendar_event.dart';
 
 class AIActionParser {
+    static String fixJson(String input) {
+    return input
+        .replaceAll(RegExp(r',\s*}'), '}')
+        .replaceAll(RegExp(r',\s*]'), ']');
+  }
+
   static ({String cleanText, Map<String, dynamic>? action}) parse(String response) {
     final regex = RegExp(r'<ACTION>(.*?)<\/ACTION>', dotAll: true);
     final match = regex.firstMatch(response);
@@ -17,7 +23,8 @@ class AIActionParser {
     final cleanText = response.replaceAll(regex, '').trim();
 
     try {
-      final action = jsonDecode(jsonStr) as Map<String, dynamic>;
+      final fixed = fixJson(jsonStr);
+      final action = jsonDecode(fixed) as Map<String, dynamic>;
       return (cleanText: cleanText, action: action);
     } catch (e) {
       debugPrint('Error parsing action JSON: $e');
