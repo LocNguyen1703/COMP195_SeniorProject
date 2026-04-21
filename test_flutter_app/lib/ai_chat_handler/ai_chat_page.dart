@@ -95,7 +95,7 @@ class AIChatPageState extends State<AIChatPage> {
     await aiQueryHandler.streamAIResponse(
       messageHistory: [{
         'role': 'user',
-        'content': 'Generate a concise title for a conversation based on the following message: ${textController.text} within no more than 7 words, and WITHOUT any <ACTION> block.'
+        'content': 'Generate a concise title for a conversation based on the following message within no more than 7 words, and WITHOUT any <ACTION> block or notes: ${textController.text} '
       }],
       onToken: (token) async {
         setState(() {
