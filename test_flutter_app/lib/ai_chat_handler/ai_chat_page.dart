@@ -6,6 +6,7 @@ import 'package:test_flutter_app/ai_chat_handler/conversation.dart';
 import 'package:test_flutter_app/ai_chat_handler/message.dart';
 import 'package:test_flutter_app/ai_chat_handler/message_database.dart';
 import 'package:test_flutter_app/ai_chat_handler/ai_response.dart';
+import 'package:test_flutter_app/calendar_page_handler/calendar_database.dart';
 
 class AIChatPage extends StatefulWidget {
   const AIChatPage({
@@ -35,6 +36,8 @@ class AIChatPageState extends State<AIChatPage> {
   final ScrollController scrollController = ScrollController(); // for scrolling the ListView to the bottom when a new message is added
   
   final AIqueryHandler aiQueryHandler = AIqueryHandler(); // instance of the AI query handler
+
+  Map<String, dynamic>? lastConfirmedPayload;
 
   Future<void> loadMessages(int? currentConversationId) async {
     if (currentConversationId == -1 || currentConversationId == null) {
@@ -124,7 +127,8 @@ class AIChatPageState extends State<AIChatPage> {
       final start = payload['start'] ?? '?';
       final end = payload['end'] ?? '?';
       final desc = (payload['description'] as String?) ?? '';
-      summary = 'Title: ${payload['title'] ?? '?'}\nFrom: $start\nTo: $end${desc.isNotEmpty ? '\nDescription: $desc' : ''}';
+      final calendarName = (payload['calendarName'] as String?) ?? ''; 
+      summary = 'Title: ${payload['title'] ?? '?'}\nCalendar name: $calendarName\nFrom: $start\nTo: $end${desc.isNotEmpty ? '\nDescription: $desc' : ''}';
       break;
     case 'create_todo_list':
       title = 'Create To-Do List?';
@@ -263,8 +267,13 @@ class AIChatPageState extends State<AIChatPage> {
                   await createMessage(fullResponse, conversationId, false); // add a new message to the messages list for the AI's response - this will be updated as the response is streamed in
                   await loadMessages(conversationId); 
 
+                  final allCalendars = await CalendarDatabase.getAllCalendars();
+                  final calendarNames = allCalendars.map((c) => c.name).toList();
+
                   await aiQueryHandler.streamAIResponse(
                     messageHistory: messageHistModified, 
+                    calendarNames: calendarNames,
+                    lastPayload: lastConfirmedPayload,
                     onToken: (token) async {
                       fullResponse += token; 
 
@@ -278,6 +287,9 @@ class AIChatPageState extends State<AIChatPage> {
                     }, 
                     onDone: () async {
                       final parsed = AIActionParser.parse(fullResponse); // parse the AI's response to check for any embedded actions
+                      if (parsed.action != null) {
+                        lastConfirmedPayload = parsed.action!['payload'] as Map<String, dynamic>?; // store the payload of the parsed action in a state variable to be used if the user confirms the action in the confirmation dialog
+                      }
                       final displayText = parsed.action != null? parsed.cleanText : fullResponse; // if an action is parsed, use the clean text without the action block for display; otherwise, use the full response
 
                       setState(() {

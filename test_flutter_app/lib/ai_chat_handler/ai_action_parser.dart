@@ -8,27 +8,56 @@ import 'package:test_flutter_app/calendar_page_handler/calendar_event.dart';
 
 class AIActionParser {
     static String fixJson(String input) {
-    return input
-        .replaceAll(RegExp(r',\s*}'), '}')
-        .replaceAll(RegExp(r',\s*]'), ']')
-        .replaceAllMapped(RegExp(r'(?<!")(\b\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\b)(?!")'), 
-          (m) => '"${m[0]}"')
-      // replace Colors.blue → "blue"
-        .replaceAllMapped(RegExp(r'Colors\s*\.\s*(\w+)'), (m) => '"${m[1]}"')
-      // convert {item1, item2} → [item1, item2]
-        .replaceAllMapped(RegExp(r'items"\s*:\s*{([^}]*)}'), (m) {
-        return '"items": [${m[1]}]';
-      });  
+      final withoutLineComments = input.replaceAll(RegExp(r'//[^\n]*'), '');
+      String result =  withoutLineComments
+          .replaceAll(RegExp(r',\s*}'), '}')
+          .replaceAll(RegExp(r',\s*]'), ']')
+          .replaceAllMapped(RegExp(r'(?<!")(\b\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\b)(?!")'), 
+            (m) => '"${m[0]}"')
+        // replace Colors.blue → "blue"
+          .replaceAllMapped(RegExp(r'Colors\s*\.\s*(\w+)'), (m) => '"${m[1]}"')
+        // convert {item1, item2} → [item1, item2]
+          .replaceAllMapped(RegExp(r'items"\s*:\s*{([^}]*)}'), (m) {
+          return '"items": [${m[1]}]';
+        });  
+      return balanceBrackets(result);
+  }
+
+    static String balanceBrackets(String input) {
+      int braces = 0;
+      int brackets = 0;
+      bool inString = false;
+      
+      for (int i = 0; i < input.length; i++) {
+        final c = input[i];
+        if (c == '"' && (i == 0 || input[i - 1] != '\\')) inString = !inString;
+        if (inString) continue;
+        if (c == '{') braces++;
+        if (c == '}') braces--;
+        if (c == '[') brackets++;
+        if (c == ']') brackets--;
+      }
+
+      // append however many closing characters are missing
+      final buffer = StringBuffer(input.trimRight());
+      for (int i = 0; i < brackets; i++) {buffer.write(']');}
+      for (int i = 0; i < braces; i++) {buffer.write('}');}
+      
+      return buffer.toString();
   }
 
   static ({String cleanText, Map<String, dynamic>? action}) parse(String response) {
-    final regex = RegExp(r'<ACTION>(.*?)<\/ACTION>', dotAll: true);
-    final match = regex.firstMatch(response);
+    final regex = RegExp(r'<[A-Z_]+>(.*?)</[A-Z_]+>', dotAll: true);
+    var match = regex.firstMatch(response);
+
+    match ??= RegExp(r'<[A-Z_]+>(.*?)$', dotAll: true).firstMatch(response);
 
     if (match == null) return (cleanText: response, action: null); 
   
     final jsonStr = match.group(1)!.trim(); 
-    final cleanText = response.replaceAll(regex, '').trim();
+      final cleanText = response
+      .replaceFirst(RegExp(r'<[A-Z_]+>.*', dotAll: true), '')
+      .trim();
 
     debugPrint("RAW JSON:\n$jsonStr");
 
@@ -127,7 +156,13 @@ class AIActionParser {
           debugPrint('No calendars found, cannot create event');
           return null; 
         }
-        final targetCalendarId = allCalendars.first.calendarId!;
+        // match by name, fall back to first calendar
+        final calendarName = (payload['calendarName'] as String? ?? '').toLowerCase();
+        final targetCalendar = allCalendars.firstWhere(
+          (c) => c.name.toLowerCase() == calendarName,
+          orElse: () => allCalendars.first,
+        );
+        final targetCalendarId = targetCalendar.calendarId!;
 
         final event = CalendarEvent(
           calendarId: targetCalendarId, //default calendarId to add events to for now...
@@ -135,7 +170,7 @@ class AIActionParser {
           description: payload['description'] as String? ?? 'No description',
           start: start,
           end: end,  
-          color: Colors.blue,
+          color: targetCalendar.color,
         ); 
         await CalendarDatabase.addEvent(event);
         return 'calendar event added'; 
