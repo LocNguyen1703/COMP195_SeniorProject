@@ -7,6 +7,7 @@ import 'package:test_flutter_app/ai_chat_handler/message.dart';
 import 'package:test_flutter_app/ai_chat_handler/message_database.dart';
 import 'package:test_flutter_app/ai_chat_handler/ai_response.dart';
 import 'package:test_flutter_app/calendar_page_handler/calendar_database.dart';
+import 'package:test_flutter_app/to_do_list_handler/todo_database.dart';
 
 class AIChatPage extends StatefulWidget {
   const AIChatPage({
@@ -270,9 +271,13 @@ class AIChatPageState extends State<AIChatPage> {
                   final allCalendars = await CalendarDatabase.getAllCalendars();
                   final calendarNames = allCalendars.map((c) => c.name).toList();
 
+                  final allLists = await TodoDatabase.getAllTodoLists();
+                  final todoListNames = allLists.map((l) => l.title).toList();    
+
                   await aiQueryHandler.streamAIResponse(
                     messageHistory: messageHistModified, 
                     calendarNames: calendarNames,
+                    todoListNames: todoListNames,
                     lastPayload: lastConfirmedPayload,
                     onToken: (token) async {
                       fullResponse += token; 

@@ -14,6 +14,7 @@ class AIqueryHandler {
     required void Function(String token) onToken, 
     required Future<void> Function() onDone,
     List<String> calendarNames = const [],
+    List<String> todoListNames = const [],
     Map<String, dynamic>? lastPayload, 
   }) async {
     // Simulate a delay for fetching the AI query
@@ -49,6 +50,10 @@ class AIqueryHandler {
     final String lastPayloadStr = lastPayload == null
       ? 'None'
       : lastPayload.entries.map((e) => '- ${e.key}: ${e.value}').join('\n    ');
+
+    final String todoListStr = todoListNames.isEmpty
+      ? 'No lists exist yet'
+      : todoListNames.map((l) => '- $l').join('\n    ');
 
     final now = DateTime.now();
     final DateTime today = DateTime(now.year, now.month, now.day); // get today's date without the time component
@@ -126,6 +131,23 @@ class AIqueryHandler {
     To-do lists:
     - Clean up vague items into clear tasks
     - Generate simple description if missing
+
+    --------------------------------------------------
+    TO-DO SELECTION RULES
+    --------------------------------------------------
+    The user's existing to-do lists are:
+        $todoListStr
+
+    For create_todo_item:
+    - listTitle MUST exactly match one of the names above (case-insensitive is fine, but spelling must match)
+    - If the user names a list that doesn't exist, ask which list they meant
+    - If no lists exist, tell the user they need to create one first
+
+    For create_todo_list:
+    - Valid categories: General, Work, School, Personal, Shopping
+    - If the user implies a category (e.g. "for school"), use the closest match
+    - If unclear, default to "General"
+    - Color defaults to "blue" unless user specifies
 
     --------------------------------------------------
     UNSAFE (DO NOT GUESS)
@@ -214,12 +236,16 @@ class AIqueryHandler {
     Valid actions:
 
     create_todo_list:
-    - title (required)
-    - items (optional)
+    - title (required — always ask if not provided)
+    - category (required — infer from context or default to "General")
+    - description (optional — generate a short one if missing)
+    - items (optional — list of item description strings)
 
     create_todo_item:
-    - listTitle (required, MUST be exact match)
+    - listTitle (required — MUST exactly match an existing list name from the list above)
     - description (required)
+    - priority (optional — 1=High, 2=Medium, 3=Low; default 2)
+    - dueDate (optional — ISO 8601, only if user specifies)
 
     create_calendar_event:
     - title (required)
@@ -457,6 +483,37 @@ class AIqueryHandler {
       "end": "${nextWed}T16:00:00",
       "description": "Dentist appointment reminder",
       "calendarName": "Personal"
+      }
+    }
+    </ACTION>
+
+    Example 9:
+    User: add "review lecture notes" to my biology list
+
+    Assistant:
+    I don't see a "Biology" list — which list did you mean? Your current lists are: $todoListStr
+
+    ---
+
+    Example 10:
+    User: add "finish essay" to my homework list with high priority
+
+    Assistant:
+    Add "finish essay" to your Homework list with high priority?
+
+    ---
+
+    User: yes
+
+    Assistant:
+    Done!
+
+    <ACTION>
+    {"action": "create_todo_item",
+    "payload": {
+      "listTitle": "Homework",
+      "description": "finish essay",
+      "priority": 1
       }
     }
     </ACTION>

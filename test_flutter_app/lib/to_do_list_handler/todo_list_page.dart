@@ -7,11 +7,13 @@ class TodoListPage extends StatefulWidget {
   // final VoidCallback? onFabPressed; // callback for when the FAB is pressed, if needed
   final VoidCallback? onListChanged;
   final int createTrigger; 
+  final int reloadTrigger;
   
   const TodoListPage({
     super.key,
     // this.onFabPressed,
     this.createTrigger = 0, // pass the create trigger from the parent widget
+    this.reloadTrigger = 0, // pass the reload trigger from the parent widget
     this.onListChanged,
   });
 
@@ -279,6 +281,10 @@ class TodoListPageState extends State<TodoListPage> {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         showCreateDialog();
       }); 
+    }
+
+    if (widget.reloadTrigger != oldWidget.reloadTrigger) {
+      loadTodoLists();
     }
   }
   

@@ -104,7 +104,7 @@ class AIActionParser {
             listId: listId,
             description: item.toString(),
             createdAt: DateTime.now(),
-            priority: 2,
+            priority: (payload['priority'] as int?) ?? 2,
             isDone: false,
           ));
         }

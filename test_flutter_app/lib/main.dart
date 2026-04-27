@@ -64,7 +64,8 @@ class _MainPageState extends State<MainPage> {
   
   List<Widget> pages = [];
 
-  int todoCreateTrigger = 0; 
+  int todoCreateTrigger = 0;
+  int todoReloadTrigger = 0; 
   int calendarReloadTrigger = 0;
 
   Map<String, List<TodoList>> groupedTodoLists = {};
@@ -508,7 +509,7 @@ class _MainPageState extends State<MainPage> {
             onConversationDeleted: deleteConversation,
             onTodoAction: () async {
               setState(() {
-                todoCreateTrigger++; // increment the trigger to signal the TodoListPage to show the create dialog
+                todoReloadTrigger++; // increment the trigger to signal the TodoListPage to show the create dialog
               });
             },
             onCalendarAction: () async {
@@ -525,6 +526,7 @@ class _MainPageState extends State<MainPage> {
           ),
           TodoListPage(
             createTrigger: todoCreateTrigger,
+            reloadTrigger: todoReloadTrigger,
             onListChanged: () async {
               await loadGroupedTodoLists(); // reload the grouped to-do lists to get the latest data after a to-do list is created, updated, or deleted in the TodoListPage
             },
