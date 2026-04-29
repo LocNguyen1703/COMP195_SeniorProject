@@ -163,35 +163,35 @@ class _MainPageState extends State<MainPage> {
 
   Widget? _buildFAB() {
     switch (currentPage) {
-    case 0:
-      return Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          FloatingActionButton(
-            onPressed: () {
-              homeKey.currentState?.decrement();
-            }, 
-            child: const Icon(Icons.remove),
-          ),
-          const SizedBox(width: 10),
-          FloatingActionButton(
-            onPressed: () {
-              homeKey.currentState?.increment();
-            },
-            child: const Icon(Icons.add),
-          ),
-        ],
-      );
+    // case 0:
+    //   return Row(
+    //     mainAxisSize: MainAxisSize.min,
+    //     children: [
+    //       FloatingActionButton(
+    //         onPressed: () {
+    //           homeKey.currentState?.decrement();
+    //         }, 
+    //         child: const Icon(Icons.remove),
+    //       ),
+    //       const SizedBox(width: 10),
+    //       FloatingActionButton(
+    //         onPressed: () {
+    //           homeKey.currentState?.increment();
+    //         },
+    //         child: const Icon(Icons.add),
+    //       ),
+    //     ],
+    //   );
 
-    case 1:
-      return FloatingActionButton(
-        onPressed: () {
-          contactKey.currentState?.showContactFormDialog(null);
-        },
-        child: const Icon(Icons.add),
-      );
+    // case 1:
+    //   return FloatingActionButton(
+    //     onPressed: () {
+    //       contactKey.currentState?.showContactFormDialog(null);
+    //     },
+    //     child: const Icon(Icons.add),
+    //   );
 
-    case 3: 
+    case 1: 
       return FloatingActionButton(
         onPressed: () {
           // calendarKey.currentState?.addEvent();
@@ -205,7 +205,7 @@ class _MainPageState extends State<MainPage> {
         ),
         child: const Icon(Icons.add),
       );
-    case 4: 
+    case 2: 
       return FloatingActionButton(
         onPressed: () async {
           setState(() {
@@ -221,34 +221,34 @@ class _MainPageState extends State<MainPage> {
 
   Widget? _buildDrawer() {
     switch(currentPage) {
-      case 0 || 1: 
-        return Drawer(
-          child: ListView(
-            padding: EdgeInsets.zero,
-            children: [
-              DrawerHeader(
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.primary,
-                ),
-                child: Text('Drawer Header'),
-              ),
-              ListTile(
-                title: Text('Item 1'),
-                onTap: () {
-                  // Handle item 1 tap
-                },
-              ),
-              ListTile(
-                title: Text('Item 2'),
-                onTap: () {
-                  // Handle item 2 tap
-                },
-              ),
-            ],
-          ),
-        );
+      // case 0 || 1: 
+      //   return Drawer(
+      //     child: ListView(
+      //       padding: EdgeInsets.zero,
+      //       children: [
+      //         DrawerHeader(
+      //           decoration: BoxDecoration(
+      //             color: Theme.of(context).colorScheme.primary,
+      //           ),
+      //           child: Text('Drawer Header'),
+      //         ),
+      //         ListTile(
+      //           title: Text('Item 1'),
+      //           onTap: () {
+      //             // Handle item 1 tap
+      //           },
+      //         ),
+      //         ListTile(
+      //           title: Text('Item 2'),
+      //           onTap: () {
+      //             // Handle item 2 tap
+      //           },
+      //         ),
+      //       ],
+      //     ),
+      //   );
 
-      case 2:
+      case 0:
         return Drawer(
           child: Column(
             children: [
@@ -317,7 +317,7 @@ class _MainPageState extends State<MainPage> {
             // future: aiChatKey.currentState?.loadConversations()
         );
 
-      case 3: 
+      case 1: 
         return Drawer(
           child: Column(
             children: [
@@ -382,7 +382,7 @@ class _MainPageState extends State<MainPage> {
 
               const Divider(height: 1),
 
-              TextButton(onPressed: (){}, child: BackButton()),
+              // TextButton(onPressed: (){}, child: BackButton()),
 
               // Add_calendar button at the bottom of the drawer
               Padding(
@@ -406,7 +406,7 @@ class _MainPageState extends State<MainPage> {
           )
         );
 
-      case 4: 
+      case 2: 
         final categories = groupedTodoLists.keys.toList()..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
         return Drawer(
           child: Column(
@@ -495,8 +495,8 @@ class _MainPageState extends State<MainPage> {
       body: IndexedStack(
         index: currentPage,
         children: [
-          HomePage(key: homeKey),
-          ContactPage(key: contactKey),
+          // HomePage(key: homeKey),
+          // ContactPage(key: contactKey),
           // const NewPage(),
           AIChatPage(
             conversationId: currentConversationId,
@@ -547,14 +547,14 @@ class _MainPageState extends State<MainPage> {
             icon: const Icon(Icons.home),
             label: 'Home',
           ),
-          BottomNavigationBarItem(
-            icon: const Icon(Icons.phone),
-            label: 'contacts',
-          ),
-          BottomNavigationBarItem(
-            icon: const Icon(Icons.person),
-            label: 'Profile', 
-          ),
+          // BottomNavigationBarItem(
+          //   icon: const Icon(Icons.phone),
+          //   label: 'contacts',
+          // ),
+          // BottomNavigationBarItem(
+          //   icon: const Icon(Icons.person),
+          //   label: 'Profile', 
+          // ),
           BottomNavigationBarItem(
               icon: const Icon(Icons.calendar_month_sharp),
               label: 'Calendar',

@@ -93,7 +93,7 @@ class AIqueryHandler {
     INTENT CLASSIFICATION
     --------------------------------------------------
     Classify the user's request into EXACTLY one:
-    1. "chat" → general conversation
+    1. "chat" → general conversation (answer questions, provide information, etc. as best you can)
     2. "todo" → to-do list or task
     3. "calendar" → scheduling an event/reminder
 

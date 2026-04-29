@@ -47,15 +47,15 @@ class AIActionParser {
   }
 
   static ({String cleanText, Map<String, dynamic>? action}) parse(String response) {
-    final regex = RegExp(r'<[A-Z_]+>(.*?)</[A-Z_]+>', dotAll: true);
+    final regex = RegExp(r'<[A-Z_]+>\s*(\{.*?\})\s*</[A-Z_]+>', dotAll: true);
     var match = regex.firstMatch(response);
 
-    match ??= RegExp(r'<[A-Z_]+>(.*?)$', dotAll: true).firstMatch(response);
+    match ??= RegExp(r'<[A-Z_]+>\s*(\{.*?)$', dotAll: true).firstMatch(response);
 
     if (match == null) return (cleanText: response, action: null); 
   
     final jsonStr = match.group(1)!.trim(); 
-      final cleanText = response
+    final cleanText = response
       .replaceFirst(RegExp(r'<[A-Z_]+>.*', dotAll: true), '')
       .trim();
 
