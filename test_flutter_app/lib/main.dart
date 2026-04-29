@@ -58,7 +58,6 @@ class _MainPageState extends State<MainPage> {
 
   final GlobalKey<HomePageState> homeKey = GlobalKey<HomePageState>();
   final GlobalKey<ContactPageState> contactKey = GlobalKey<ContactPageState>();
-  // final GlobalKey<CalendarPageState> calendarKey = GlobalKey<CalendarPageState>();
   
   final ScrollController scrollController = ScrollController();
   
@@ -89,7 +88,6 @@ class _MainPageState extends State<MainPage> {
     if (currentConversationId == conversationId) {
       setState(() {
         currentConversationId = null; // clear the current conversation if it was deleted
-        // messages = []; // clear messages if the current conversation was deleted
       });
     }
   }
@@ -163,34 +161,6 @@ class _MainPageState extends State<MainPage> {
 
   Widget? _buildFAB() {
     switch (currentPage) {
-    // case 0:
-    //   return Row(
-    //     mainAxisSize: MainAxisSize.min,
-    //     children: [
-    //       FloatingActionButton(
-    //         onPressed: () {
-    //           homeKey.currentState?.decrement();
-    //         }, 
-    //         child: const Icon(Icons.remove),
-    //       ),
-    //       const SizedBox(width: 10),
-    //       FloatingActionButton(
-    //         onPressed: () {
-    //           homeKey.currentState?.increment();
-    //         },
-    //         child: const Icon(Icons.add),
-    //       ),
-    //     ],
-    //   );
-
-    // case 1:
-    //   return FloatingActionButton(
-    //     onPressed: () {
-    //       contactKey.currentState?.showContactFormDialog(null);
-    //     },
-    //     child: const Icon(Icons.add),
-    //   );
-
     case 1: 
       return FloatingActionButton(
         onPressed: () {
@@ -221,33 +191,6 @@ class _MainPageState extends State<MainPage> {
 
   Widget? _buildDrawer() {
     switch(currentPage) {
-      // case 0 || 1: 
-      //   return Drawer(
-      //     child: ListView(
-      //       padding: EdgeInsets.zero,
-      //       children: [
-      //         DrawerHeader(
-      //           decoration: BoxDecoration(
-      //             color: Theme.of(context).colorScheme.primary,
-      //           ),
-      //           child: Text('Drawer Header'),
-      //         ),
-      //         ListTile(
-      //           title: Text('Item 1'),
-      //           onTap: () {
-      //             // Handle item 1 tap
-      //           },
-      //         ),
-      //         ListTile(
-      //           title: Text('Item 2'),
-      //           onTap: () {
-      //             // Handle item 2 tap
-      //           },
-      //         ),
-      //       ],
-      //     ),
-      //   );
-
       case 0:
         return Drawer(
           child: Column(
@@ -288,23 +231,14 @@ class _MainPageState extends State<MainPage> {
                       onTap: () {
                         // Handle conversation tap (e.g., load the conversation in the main area)
                         setState(() {
-                          // aiChatKey.currentState?.currentConversationId = aiChatKey.currentState?.conversations[index].id;
                           currentConversationId = conversations[index-1].id;
-                          // aiChatKey.currentState?.loadMessages(aiChatKey.currentState?.currentConversationId ?? -1); // load messages for the selected conversation (using -1 as a placeholder for no conversation)
                         });
                       },
                       trailing: IconButton(
                         icon: Icon(Icons.delete, color: Colors.red),
                         onPressed: () async {
                           // Handle conversation deletion
-                          // await deleteConversation(aiChatKey.currentState?.conversations[index].id??-1);
                           await deleteConversation(conversations[index-1].id??-1); // delete the conversation from the database
-                
-                          // setState(() {}); // forces the widget to rebuild and reflect the updated conversations list after deletion 
-                          // setState(() {
-                          //   // aiChatKey.currentState?.conversations.removeWhere((c) => c.id == aiChatKey.currentState?.conversations[index].id);
-                          //   aiChatKey.currentState?.loadConversations(); // reload conversations to update the sidebar after deletion
-                          // });
                         },
                       ),
                     );
@@ -313,8 +247,6 @@ class _MainPageState extends State<MainPage> {
               ),
             ], 
           ),
-          // child: FutureBuilder<List<Conversation>>(
-            // future: aiChatKey.currentState?.loadConversations()
         );
 
       case 1: 
@@ -381,8 +313,6 @@ class _MainPageState extends State<MainPage> {
               ),
 
               const Divider(height: 1),
-
-              // TextButton(onPressed: (){}, child: BackButton()),
 
               // Add_calendar button at the bottom of the drawer
               Padding(
@@ -495,9 +425,6 @@ class _MainPageState extends State<MainPage> {
       body: IndexedStack(
         index: currentPage,
         children: [
-          // HomePage(key: homeKey),
-          // ContactPage(key: contactKey),
-          // const NewPage(),
           AIChatPage(
             conversationId: currentConversationId,
             onConversationCreated: (int newId) async {
@@ -508,6 +435,7 @@ class _MainPageState extends State<MainPage> {
             },
             onConversationDeleted: deleteConversation,
             onTodoAction: () async {
+              await loadGroupedTodoLists(); // reload the grouped to-do lists to get the latest data after a to-do action is executed in the AIChatPage (e.g., a to-do list is created, updated, or deleted through an AI action)
               setState(() {
                 todoReloadTrigger++; // increment the trigger to signal the TodoListPage to show the create dialog
               });
@@ -528,7 +456,7 @@ class _MainPageState extends State<MainPage> {
             createTrigger: todoCreateTrigger,
             reloadTrigger: todoReloadTrigger,
             onListChanged: () async {
-              await loadGroupedTodoLists(); // reload the grouped to-do lists to get the latest data after a to-do list is created, updated, or deleted in the TodoListPage
+              await loadGroupedTodoLists(); // reload the gdrarouped to-do lists to get the latest data after a to-do list is created, updated, or deleted in the TodoListPage
             },
           ),
         ],
@@ -547,14 +475,6 @@ class _MainPageState extends State<MainPage> {
             icon: const Icon(Icons.home),
             label: 'Home',
           ),
-          // BottomNavigationBarItem(
-          //   icon: const Icon(Icons.phone),
-          //   label: 'contacts',
-          // ),
-          // BottomNavigationBarItem(
-          //   icon: const Icon(Icons.person),
-          //   label: 'Profile', 
-          // ),
           BottomNavigationBarItem(
               icon: const Icon(Icons.calendar_month_sharp),
               label: 'Calendar',
