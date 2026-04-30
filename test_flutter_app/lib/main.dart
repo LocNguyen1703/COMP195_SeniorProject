@@ -103,17 +103,20 @@ class _MainPageState extends State<MainPage> {
         .map((c) => c.calendarId!)
         .toSet();
       
-      activeCalendarIds = newIds.intersection(activeCalendarIds)..addAll(newIds.difference(activeCalendarIds)); // add any new calendar IDs to the active set and remove any deleted calendar IDs from the active set
+      // activeCalendarIds = newIds.intersection(activeCalendarIds)..addAll(newIds.difference(activeCalendarIds)); // add any new calendar IDs to the active set and remove any deleted calendar IDs from the active set
+      activeCalendarIds = newIds;
     });
   }
 
   void toggleCalendar(int calendarId) {
     setState(() {
-      if (activeCalendarIds.contains(calendarId)) {
-        activeCalendarIds.remove(calendarId);
+      final newSet = Set<int>.from(activeCalendarIds);
+      if (newSet.contains(calendarId)) {
+        newSet.remove(calendarId);
       } else {
-        activeCalendarIds.add(calendarId);
+        newSet.add(calendarId);
       }
+      activeCalendarIds = newSet;
     });
   }
 
@@ -125,7 +128,7 @@ class _MainPageState extends State<MainPage> {
           .map((c) => c.calendarId!)
           .toSet();
       } else {
-        activeCalendarIds.clear();
+        activeCalendarIds = {};
       }
     });
   }
