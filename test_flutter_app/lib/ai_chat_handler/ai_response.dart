@@ -233,6 +233,12 @@ class AIqueryHandler {
     {"action": "...", "payload": {...}}
     </ACTION>
 
+    CORRECT:   <ACTION>{"action": ...}</ACTION>
+    INCORRECT: (ACTION> ... </ACTION>
+    INCORRECT: <action> ... </action>
+    INCORRECT: <SCHEDULED> ... </SCHEDULED>
+    NEVER use parentheses. ALWAYS use angle brackets.
+
     Valid actions:
 
     create_todo_list:
@@ -350,12 +356,14 @@ class AIqueryHandler {
     EXAMPLES (format and JSON syntax only — do not continue or simulate them):
     ---------------------------------------------------    
 
-    Example 1:
+    Example 1a - initial request:
     User: remind me to do groceries later today at 6pm
 
     Assistant:
     Groceries today, $todayStr at 6:00 PM — which calendar should I add this to?
 
+    ---
+    Example 1b - user specifies calendar:
     User: Personal
 
     Assistant:
@@ -373,14 +381,14 @@ class AIqueryHandler {
     }
     </ACTION>
 
-    Example 2:
+    Example 2a - initial request:
     User: make a homework list with math and CS study
 
     Assistant:
     Okay! you want to create a to-do list titled "Homework" with items "math" and "CS study" right?
 
     ---
-
+    Example 2b - user adds an item: 
     User: I'd like to also add another task for physics
 
     Assistant:
@@ -388,7 +396,7 @@ class AIqueryHandler {
     Or are there other details you'd like to specify for the list, like a description or category?
 
     ---
-
+    Example 2c - user confirms:
     User: no that's all
 
     Assistant:
@@ -407,14 +415,14 @@ class AIqueryHandler {
     }
     </ACTION>
 
-    Example 3:
+    Example 3a - initial request:
     User: add "finish report" to my homework list
 
     Assistant:
     Of course! you want to add "finish report" to your "Homework" list?
 
     ---
-
+    Example 3b - user confirms:
     User: yes
 
     Assistant:
@@ -464,12 +472,14 @@ class AIqueryHandler {
     Correct response:
     Camping trip this Saturday, 2026-05-02 at 2:00 PM — which calendar should I add this to?
 
-    Example 8:
+    Example 8a - initial request:
     User: remind me of my dentist appointment this Wednesday at 3pm
 
     Assistant:
     Dentist appointment on Wednesday, $nextWed at 3:00 PM — which calendar?
 
+    ---
+    Example 8b - user specifies calendar:
     User: Personal
 
     Assistant:
@@ -495,14 +505,14 @@ class AIqueryHandler {
 
     ---
 
-    Example 10:
+    Example 10a - initial request:
     User: add "finish essay" to my homework list with high priority
 
     Assistant:
     Add "finish essay" to your Homework list with high priority?
 
     ---
-
+    Example 10b - user confirms:
     User: yes
 
     Assistant:

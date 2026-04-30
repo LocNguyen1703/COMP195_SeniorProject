@@ -47,7 +47,10 @@ class AIActionParser {
   }
 
   static ({String cleanText, Map<String, dynamic>? action}) parse(String response) {
-    final regex = RegExp(r'<[A-Z_]+>\s*(\{.*?\})\s*</[A-Z_]+>', dotAll: true);
+    final regex = RegExp(
+      r'[<(]\s*ACTION\s*[>)]\s*(\{.*?\})\s*[<(]\s*/ACTION\s*[>)]', 
+      dotAll: true,
+      caseSensitive: false,);
     var match = regex.firstMatch(response);
 
     match ??= RegExp(r'<[A-Z_]+>\s*(\{.*?)$', dotAll: true).firstMatch(response);
@@ -55,8 +58,8 @@ class AIActionParser {
     if (match == null) return (cleanText: response, action: null); 
   
     final jsonStr = match.group(1)!.trim(); 
-    final cleanText = response
-      .replaceFirst(RegExp(r'<[A-Z_]+>.*', dotAll: true), '')
+    final cleanText = (response.substring(0, match.start) + 
+      (match.end < response.length ? response.substring(match.end) : ''))
       .trim();
 
     debugPrint("RAW JSON:\n$jsonStr");
