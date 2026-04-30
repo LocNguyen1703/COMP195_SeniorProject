@@ -104,7 +104,11 @@ class _MainPageState extends State<MainPage> {
         .toSet();
       
       // activeCalendarIds = newIds.intersection(activeCalendarIds)..addAll(newIds.difference(activeCalendarIds)); // add any new calendar IDs to the active set and remove any deleted calendar IDs from the active set
-      activeCalendarIds = newIds;
+      // activeCalendarIds = newIds;
+      activeCalendarIds = {
+      ...activeCalendarIds.intersection(newIds), // keep ones still in DB
+      ...newIds.difference(activeCalendarIds),   // auto-check new ones
+      };
     });
   }
 
@@ -284,6 +288,7 @@ class _MainPageState extends State<MainPage> {
                     final displayCal = calendars[index];
                     final isActive = activeCalendarIds.contains(displayCal.calendarId);
                     return ListTile(
+                      key: ValueKey(displayCal.calendarId),
                       leading: Checkbox(
                         value: isActive,
                         activeColor: displayCal.color,

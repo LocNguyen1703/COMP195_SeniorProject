@@ -102,6 +102,7 @@ class CalendarFormWidgetState extends State<CalendarFormWidget> {
                 if (widget.calendar != null) TextButton(
                   onPressed: () async {
                     await CalendarDatabase.deleteCalendar(widget.calendar!.calendarId!);
+                    Navigator.of(context).pop(true);
                   },
                   style: TextButton.styleFrom(foregroundColor: Colors.red),
                   child: const Text('Delete'),

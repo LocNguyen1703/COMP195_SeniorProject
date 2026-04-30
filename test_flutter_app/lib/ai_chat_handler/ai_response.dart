@@ -98,8 +98,8 @@ class AIqueryHandler {
     3. "calendar" → scheduling an event/reminder
 
     Rules:
-    - "remind me to", "remind me of a...", "remind me", "schedule", "set a reminder", "meeting", "appointment" → ALWAYS "calendar"
-    - NEVER treat reminders as timers or future promises (currently there's no timer system in the app)
+    - "remind me to", "remind me of a...", "remind me", "schedule", "set a reminder", "meeting", "appointment" → ALWAYS "calendar" intent
+    - NEVER treat reminders as timers, future promises or internal notes (currently there's no timer system in the app)
     - If time/date is mentioned → ALWAYS "calendar"
     - Any future intent (later, tonight, tomorrow, etc.) → ALWAYS "calendar"
     - NEVER simulate reminders (no "I'll remind you later") (the app has no timer or reminder system)
