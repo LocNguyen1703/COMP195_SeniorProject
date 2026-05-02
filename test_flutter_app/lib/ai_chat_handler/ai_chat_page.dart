@@ -116,57 +116,63 @@ class AIChatPageState extends State<AIChatPage> {
   }
 
   Future<bool?> showActionConfirmationDialog(Map<String, dynamic> action) async {
-  final type = action['action'] as String? ?? '';
-  final payload = action['payload'] as Map<String, dynamic>? ?? {};
+    final type = action['action'] as String? ?? '';
+    final payload = action['payload'] as Map<String, dynamic>? ?? {};
 
-  String title;
-  String summary;
+    String title;
+    String summary;
 
-  switch (type) {
-    case 'create_calendar_event':
-      title = 'Create Calendar Event?';
-      final start = payload['start'] ?? '?';
-      final end = payload['end'] ?? '?';
-      final desc = (payload['description'] as String?) ?? '';
-      final calendarName = (payload['calendarName'] as String?) ?? ''; 
-      summary = 'Title: ${payload['title'] ?? '?'}\nCalendar name: $calendarName\nFrom: $start\nTo: $end${desc.isNotEmpty ? '\nDescription: $desc' : ''}';
-      break;
-    case 'create_todo_list':
-      title = 'Create To-Do List?';
-      final items = (payload['items'] as List<dynamic>?)
-          ?.map((e) => '• $e')
-          .join('\n') ?? 'No items';
-      summary = 'Title: ${payload['title'] ?? '?'}\n$items';
-      break;
-    case 'create_todo_item':
-      title = 'Add Task?';
-      summary = 'Add "${payload['description'] ?? '?'}" '
-          'to list "${payload['listTitle'] ?? '?'}"';
-      break;
-    default:
-      title = 'Confirm Action';
-      summary = 'Unknown action: $type';
+    switch (type) {
+      case 'create_calendar_event':
+        title = 'Create Calendar Event?';
+        final start = payload['start'] ?? '?';
+        final end = payload['end'] ?? '?';
+        final desc = (payload['description'] as String?) ?? '';
+        final calendarName = (payload['calendarName'] as String?) ?? ''; 
+        summary = 'Title: ${payload['title'] ?? '?'}\nCalendar name: $calendarName\nFrom: $start\nTo: $end${desc.isNotEmpty ? '\nDescription: $desc' : ''}';
+        break;
+      case 'create_todo_list':
+        title = 'Create To-Do List?';
+        final items = (payload['items'] as List<dynamic>?)
+            ?.map((e) => '• $e')
+            .join('\n') ?? 'No items';
+        summary = 'Title: ${payload['title'] ?? '?'}\n$items';
+        break;
+      case 'create_todo_item':
+        title = 'Add Task(s)?';
+        final raw = payload['descriptions'] ?? payload['items'];
+        final String itemsSummary;
+        if (raw is List && raw.isNotEmpty) {
+          itemsSummary = raw.map((e) => '• $e').join('\n');
+        } else {
+          itemsSummary = '• ${payload['description'] ?? '?'}';
+        }
+        summary = 'Add to list "${payload['listTitle'] ?? '?'}":\n$itemsSummary';
+        break;
+      default:
+        title = 'Confirm Action';
+        summary = 'Unknown action: $type';
+    }
+
+    return showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => AlertDialog(
+        title: Text(title),
+        content: Text(summary),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Confirm'),
+          ),
+        ],
+      ),
+    );
   }
-
-  return showDialog<bool>(
-    context: context,
-    barrierDismissible: false,
-    builder: (_) => AlertDialog(
-      title: Text(title),
-      content: Text(summary),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context, false),
-          child: const Text('Cancel'),
-        ),
-        ElevatedButton(
-          onPressed: () => Navigator.pop(context, true),
-          child: const Text('Confirm'),
-        ),
-      ],
-    ),
-  );
-}
 
   @override
   void initState() {

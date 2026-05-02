@@ -138,16 +138,35 @@ class AIqueryHandler {
     The user's existing to-do lists are:
         $todoListStr
 
+    CRITICAL — CHOOSING THE RIGHT ACTION:
+    - User wants to ADD ITEMS TO AN EXISTING LIST → ALWAYS use create_todo_item
+      NEVER use create_todo_list for this. create_todo_list creates a brand new list.
+    - User wants to CREATE A NEW LIST → use create_todo_list
+    - If the user says "add X to my Y list" → create_todo_item, full stop.
+
+    ADDING MULTIPLE ITEMS:
+    - If the user wants to add more than one item to an existing list, use
+      create_todo_item with a "descriptions" array instead of a single "description":
+      "descriptions": ["bottle of water", "Lays potato chips"]
+    - NEVER fall back to create_todo_list just because there are multiple items.
+
+    LIST NAME MATCHING:
+    - Match by meaning, not just exact spelling.
+    - "shopping list", "grocery list", "groceries" → look for the closest existing list
+      (e.g. "Groceries"). If you find a likely match, confirm it: 
+      "Add those to your Groceries list?"
+    - Only ask which list if there is genuine ambiguity between two or more existing lists.
+    - NEVER tell the user a list doesn't exist if a close match is present.
+
     For create_todo_item:
-    - listTitle MUST exactly match one of the names above (case-insensitive is fine, but spelling must match)
-    - If the user names a list that doesn't exist, ask which list they meant
-    - If no lists exist, tell the user they need to create one first
+    - listTitle MUST exactly match one of the names above (case-insensitive)
+    - If no close match exists, ask which list they meant and show the list
+    - If no lists exist at all, tell the user they need to create one first
 
     For create_todo_list:
     - Valid categories: General, Work, School, Personal, Shopping
     - If the user implies a category (e.g. "for school"), use the closest match
     - If unclear, default to "General"
-    - Color defaults to "blue" unless user specifies
 
     --------------------------------------------------
     UNSAFE (DO NOT GUESS)
@@ -233,11 +252,15 @@ class AIqueryHandler {
     {"action": "...", "payload": {...}}
     </ACTION>
 
+    --------------------------------------------------
+    THE ONLY VALID TAG IS <ACTION>...</ACTION> — no exceptions, no matter how long
+      the conversation has been. NEVER use <SCHEDULED>, <CALENDAR_EVENT>, or any
+      other tag name. If in doubt, use <ACTION>.
+    --------------------------------------------------
     CORRECT:   <ACTION>{"action": ...}</ACTION>
-    INCORRECT: (ACTION> ... </ACTION>
-    INCORRECT: <action> ... </action>
-    INCORRECT: <SCHEDULED> ... </SCHEDULED>
-    NEVER use parentheses. ALWAYS use angle brackets.
+    INCORRECT: <action> ... </action>       ← wrong case
+    INCORRECT: (ACTION> ... </ACTION>       ← wrong bracket
+    INCORRECT: <SCHEDULED> ... </SCHEDULED> ← wrong tag name — NOT valid
 
     Valid actions:
 
@@ -249,9 +272,12 @@ class AIqueryHandler {
 
     create_todo_item:
     - listTitle (required — MUST exactly match an existing list name from the list above)
-    - description (required)
+    - descriptions (required — ALWAYS use this array, even for a single item)
+      e.g. "descriptions": ["bottle of coke", "Lays potato chips"]
+      e.g. "descriptions": ["finish report"]
     - priority (optional — 1=High, 2=Medium, 3=Low; default 2)
     - dueDate (optional — ISO 8601, only if user specifies)
+    NEVER use "description" (singular) or "items" — only "descriptions" (array).
 
     create_calendar_event:
     - title (required)
@@ -297,7 +323,7 @@ class AIqueryHandler {
     2. A single confirmation question
     3. A final response + <ACTION>
 
-    NEVER include:
+    NEVER include these, no matter how long the conversation has been:
       - ANY kind of reasoning
       - ANY kind of explanations
       - notes
@@ -432,7 +458,7 @@ class AIqueryHandler {
     {"action": "create_todo_item",
     "payload": {
       "listTitle": "Homework",
-      "description": "finish report",
+      "descriptions": ["finish report"],
       "createdAt": "2026-04-20T09:00:00",
       "priority": 2,
       "isDone": false
@@ -522,7 +548,7 @@ class AIqueryHandler {
     {"action": "create_todo_item",
     "payload": {
       "listTitle": "Homework",
-      "description": "finish essay",
+      "descriptions": ["finish essay"],
       "priority": 1
       }
     }

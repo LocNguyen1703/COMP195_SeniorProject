@@ -48,12 +48,13 @@ class AIActionParser {
 
   static ({String cleanText, Map<String, dynamic>? action}) parse(String response) {
     final regex = RegExp(
-      r'[<(]\s*ACTION\s*[>)]\s*(\{.*?\})\s*[<(]\s*/ACTION\s*[>)]', 
+      r'<\s*[A-Z_]+\s*>\s*(\{.*?\})\s*</\s*[A-Z_]+\s*>', 
       dotAll: true,
       caseSensitive: false,);
     var match = regex.firstMatch(response);
 
-    match ??= RegExp(r'<[A-Z_]+>\s*(\{.*?)$', dotAll: true).firstMatch(response);
+    // fallback check catches case where model starts a JSON tag but never closes it
+    match ??= RegExp(r'<[A-Z_]+>\s*(\{.*?)$', dotAll: true).firstMatch(response); 
 
     if (match == null) return (cleanText: response, action: null); 
   
@@ -115,18 +116,33 @@ class AIActionParser {
 
       case 'create_todo_item':
         final lists = await TodoDatabase.getAllTodoLists();
-        final match = lists.where((l) => 
-          l.title.toLowerCase() == (payload['listTitle'] ?? '').toLowerCase() ).firstOrNull;
+        final match = lists.where((l) =>
+          l.title.toLowerCase() == (payload['listTitle'] ?? '').toLowerCase()).firstOrNull;
 
-        if (match == null) return null; 
-        await TodoDatabase.addTodoItem(TodoItem(
-          listId: match.id!,
-          description: payload['description'] ?? '',
-          createdAt: DateTime.now(),
-          priority: 2,
-          isDone: false,
-        ));
+        if (match == null) return null;
 
+        // Resolve items from whichever field the model used:
+        // "descriptions" (correct), "items" (model drift), or "description" (singular fallback)
+        final List<String> descriptions;
+        final raw = payload['descriptions'] ?? payload['items'];
+        if (raw is List) {
+          descriptions = raw.map((e) => e.toString()).toList();
+        } else {
+          final single = (payload['description'] as String? ?? '').trim();
+          descriptions = single.isNotEmpty ? [single] : [];
+        }
+
+        if (descriptions.isEmpty) return null;
+
+        for (final desc in descriptions) {
+          await TodoDatabase.addTodoItem(TodoItem(
+            listId: match.id!,
+            description: desc,
+            createdAt: DateTime.now(),
+            priority: (payload['priority'] as int?) ?? 2,
+            isDone: false,
+          ));
+        }
         return 'todo_list item added';
 
       case 'create_calendar_event':
